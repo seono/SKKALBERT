@@ -30,7 +30,7 @@ python2 run_korquad.py <parameter 들> --do_train=True --train_file=”파일1 �
     --predict_file="gs://korquad/og_dev_v2/korquad2.1_dev_00.json gs://korquad/og_dev_v2/korquad2.1_dev_01.json gs://korquad/og_dev_v2/korquad2.1_dev_02.json gs://korquad/og_dev_v2/korquad2.1_dev_03.json gs://korquad/og_dev_v2/korquad2.1_dev_04.json"\
     --train_batch_size=16 --learning_rate=1e-4 --num_train_epochs=1.0 --max_seq_length=384 --doc_stride=128 --output_dir=gs://korquad/out_put/ --use_tpu=True --tpu_name=korquad2 --do_lower_case=False --v2=True
 
-개선점 :
+>20.04.26~ 개선점
 
     디렉토리로 묶어서 --train_dir = gs://korquad/og_train_v2/ 전달하는 방법으로 하면 더 깔끔
     
