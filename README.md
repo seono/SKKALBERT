@@ -99,7 +99,7 @@ python2 run_korquad.py <parameter 들> --do_train=True --train_file=”파일1 �
 
 >run code e.g.
 
-    python run_qa.py \
+python run_qa.py \
   --checkpoint bert_small/korquad_00.bin \
   --config_file bert_small/bert_small.json \
   --vocab_file bert_small/ko_vocab_32k.txt \
