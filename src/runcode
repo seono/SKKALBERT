@@ -1,0 +1,22 @@
+python run_qa.py \
+  --checkpoint bert_small/korquad_00.bin \
+  --config_file bert_small/bert_small.json \
+  --vocab_file bert_small/ko_vocab_32k.txt \
+  --output_dir bert_small/output/ \
+  --train_file_name train/korquad2.1_train_ \
+  --output_exam train/examples/ \
+  --extract_exam True \
+  --extract_start 2\
+  --example_dir train/examples/ \
+  --train_file_start 29 \
+  --train_file_end 36\
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --max_query_length 64 \
+  --max_answer_length 300 \
+  --parse_size 250 \
+  --per_gpu_train_batch_size 8 \
+  --learning_rate 5e-5 \
+  --num_train_epochs 4.0 \
+  --adam_epsilon 1e-6 \
+  --warmup_proportion 0.1
