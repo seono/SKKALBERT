@@ -1,0 +1,15 @@
+python eval_qa.py \
+  --checkpoint bert_small/korquad_00.bin \
+  --config_file bert_small/bert_small.json \
+  --vocab_file bert_small/ko_vocab_32k.txt \
+  --output_dir bert_small/output/ \
+  --predict_file dev/korquad2.1_dev_ \
+  --max_seq_length 384 \
+  --doc_stride 64 \
+  --max_query_length 64 \
+  --max_answer_length 30 \
+  --batch_size 16 \
+  --n_best_size 20 \
+  --load_and_eval True \
+  --load_eval_range 0 \
+  --example_dir dev/examples/

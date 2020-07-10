@@ -4,17 +4,16 @@ python run_qa.py \
   --vocab_file bert_small/ko_vocab_32k.txt \
   --output_dir bert_small/output/ \
   --train_file_name train/korquad2.1_train_ \
-  --output_exam train/examples/ \
   --extract_exam True \
-  --extract_start 2\
+  --extract_start 4\
   --example_dir train/examples/ \
-  --train_file_start 29 \
-  --train_file_end 36\
+  --train_file_start 38 \
+  --train_file_end 38\
   --max_seq_length 384 \
   --doc_stride 128 \
   --max_query_length 64 \
   --max_answer_length 300 \
-  --parse_size 250 \
+  --parse_size 50 \
   --per_gpu_train_batch_size 8 \
   --learning_rate 5e-5 \
   --num_train_epochs 4.0 \

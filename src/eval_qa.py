@@ -8,6 +8,11 @@ import random
 import json
 import sys
 
+try:
+    import cPickle as pickle
+except ModuleNotFoundError:
+    import pickle
+
 import numpy as np
 import torch
 from torch.utils.data import (DataLoader, SequentialSampler,
@@ -19,9 +24,9 @@ except:
     from tensorboardX import SummaryWriter
 
 from tqdm import tqdm
-
+from collections import OrderedDict
 from models.modeling_bert import Config, QuestionAnswering
-from utils.korquad_utils import (read_squad_examples, convert_examples_to_features, RawResult, write_predictions)
+from utils.korquad_utils import (read_squad_examples, convert_examples_to_features, RawResult, write_predictions, InputFeatures, SquadExample)
 from utils.tokenization import BertTokenizer
 from debug.evaluate_korquad import evaluate as korquad_eval
 # The follwing import is the official SQuAD evaluation script (2.0).
@@ -83,32 +88,47 @@ def evaluate(args, model, eval_examples, eval_features):
                       False, output_prediction_file, output_nbest_file,
                       None, False, False, 0.0)
 
-    expected_version = 'KorQuAD_v1.0'
-    with open(args.predict_file) as dataset_file:
-        dataset_json = json.load(dataset_file)
-        read_version = "_".join(dataset_json['version'].split("_")[:-1])
-        if (read_version != expected_version):
-            logger.info('Evaluation expects ' + expected_version +
-                        ', but got dataset with ' + read_version,
-                        file=sys.stderr)
-        dataset = dataset_json['data']
+    
     with open(os.path.join(args.output_dir, "predictions.json")) as prediction_file:
         predictions = json.load(prediction_file)
-    logger.info(json.dumps(korquad_eval(dataset, predictions)))
+    logger.info(json.dumps(korquad_eval(args, predictions)))
 
+
+def save_examples(args, examples, features, num1, num2):
+    output_examples = "eval_example_{0}_{1}.pkl".format(num1, num2)
+    output_exam_file = os.path.join(args.example_dir, output_examples)
+    with open(output_exam_file, 'wb') as output:
+        pickle.dump(examples,output,pickle.HIGHEST_PROTOCOL)
+    output_features = "eval_feature_{0}_{1}.pkl".format(num1, num2)
+    logger.info("extracting end, %s & %s saved", output_examples, output_features)
+    output_feat_file = os.path.join(args.example_dir, output_features)
+    with open(output_feat_file, 'wb') as output:
+        pickle.dump(features, output, pickle.HIGHEST_PROTOCOL)
 
 def load_and_cache_examples(args, tokenizer):
     # Load data features from cache or dataset file
-    examples = read_squad_examples(input_file=args.predict_file,
-                                   is_training=False,
-                                   version_2_with_negative=False)
-    features = convert_examples_to_features(examples=examples,
-                                            tokenizer=tokenizer,
-                                            max_seq_length=args.max_seq_length,
-                                            doc_stride=args.doc_stride,
-                                            max_query_length=args.max_query_length,
-                                            is_training=False)
-    return examples, features
+    for a in range(0,5):
+        a='0'+str(a)
+        filename = args.predict_file+a+'.json'
+        with open(filename, encoding="utf-8") as data_file:
+            datas = json.load(data_file, object_pairs_hook=OrderedDict)
+        i=0
+        if args.extract_start>0:
+            i=args.extract_start
+            args.extract_start = 0
+        while (i+1)*args.parse_size<= len(datas["data"]):
+            data = datas["data"][i*args.parse_size:(i+1)*args.parse_size]
+            examples = read_squad_examples(data= data,
+                                        is_training=False,
+                                        version_2_with_negative=False)
+            features = convert_examples_to_features(examples=examples,
+                                                    tokenizer=tokenizer,
+                                                    max_seq_length=args.max_seq_length,
+                                                    doc_stride=args.doc_stride,
+                                                    max_query_length=args.max_query_length,
+                                                    is_training=False)
+            save_examples(args, examples, features, a, str(i))
+            i+=1
 
 
 def main():
@@ -123,7 +143,7 @@ def main():
     parser.add_argument("--vocab_file", default='data/large_v1_32k_vocab.txt', type=str,
                         help="tokenizer vocab file")
 
-    parser.add_argument("--predict_file", default='data/korquad/KorQuAD_v1.0_dev.json', type=str,
+    parser.add_argument("--predict_file", default='dev/korquad2.1_dev_', type=str,
                         help="SQuAD json for predictions. E.g., dev-v1.1.json or test-v1.1.json")
 
     parser.add_argument("--max_seq_length", default=512, type=int,
@@ -137,6 +157,19 @@ def main():
     parser.add_argument("--max_answer_length", default=30, type=int,
                         help="The maximum length of an answer that can be generated. This is needed because the start "
                              "and end predictions are not conditioned on one another.")
+
+    parser.add_argument("--extract", default = False, type = bool,
+                        help="Extract examples and features from dev file")
+    parser.add_argument("--load_and_eval", default = False, type = bool,
+                        help = "load examples and feature files and evaluate")
+    parser.add_argument("--load_eval_range", default = 0, type = int,
+                        help = "load example file range")
+    parser.add_argument("--example_dir", default='dev/examples/', type=str,
+                        help="examples file directory path")
+    parser.add_argument("--extract_start", default=0, type= int,
+                        help="extract file start")
+    parser.add_argument("--parse_size", default=250, type = int,
+                        help="for Out Of Memory problem parse data files")
 
     parser.add_argument("--batch_size", default=16, type=int,
                         help="Batch size per GPU/CPU for evaluation.")
@@ -182,8 +215,23 @@ def main():
     logger.info("Evaluation parameters %s", args)
 
     # Evaluate
-    examples, features = load_and_cache_examples(args, tokenizer)
-    evaluate(args, model, examples, features)
+    if args.extract is True:
+        load_and_cache_examples(args, tokenizer)
+    examples = []
+    features = []
+    if args.load_and_eval is True:
+        for i in range(args.load_eval_range+1):
+            load_exam = args.example_dir+"eval_{0}_{1}.pkl".format('example',str(i))
+            load_feat = args.example_dir+"eval_{0}_{1}.pkl".format('feature',str(i))
+            with open(load_exam,'rb') as input:
+                example = pickle.load(input)
+                for e in example:
+                    examples.append(e)
+            with open(load_feat,'rb') as input:
+                feature = pickle.load(input)
+                for f in feature:
+                    features.append(f)
+        evaluate(args, model, examples, features)
 
 
 if __name__ == "__main__":

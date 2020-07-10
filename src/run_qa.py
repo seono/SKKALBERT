@@ -164,7 +164,7 @@ def load_and_cache_examples(args, tokenizer, data, input_file):
 def save_examples(args, dataset, num1, num2):
     output_examples = "korquad_example_{0}_{1}.bin".format(num1, num2)
     logger.info("extracting end, %s saved", output_examples)
-    output_exam_file = os.path.join(args.output_exam, output_examples)
+    output_exam_file = os.path.join(args.example_dir, output_examples)
     torch.save(dataset, output_exam_file)
 
 def main():
@@ -185,8 +185,6 @@ def main():
 
     parser.add_argument("--extract_exam", default=False, type=bool,
                         help="if True only extract examples from train_file")
-    parser.add_argument("--output_exam", default='train/examples/', type=str,
-                        help="korquad examples.")
     parser.add_argument("--train_file_start", default=0, type=int,
                         help="KorQuAD json file start number. E.g., 0")
     parser.add_argument("--train_file_end", default=38, type=int,
@@ -202,6 +200,7 @@ def main():
                         help="KorQuAD example file end number. E.g., 38")
     parser.add_argument("--extract_start", default= 0, type= int,
                         help="if extract example stop while extracting korquad json file. E.g., 3")
+                        
     parser.add_argument("--max_seq_length", default=512, type=int,
                         help="The maximum total input sequence length after WordPiece tokenization. Sequences "
                              "longer than this will be truncated, and sequences shorter than this will be padded.")
@@ -280,6 +279,7 @@ def main():
     # Prepare model
     config = Config.from_json_file(args.config_file)
     model = QuestionAnswering(config)
+    # checkpoint에서... 
     model.load_state_dict(torch.load(args.checkpoint))
     num_params = count_parameters(model)
     logger.info("Total Parameter: %d" % num_params)
@@ -313,7 +313,7 @@ def main():
         for e in range(args.example_file_start, args.example_file_end):
             if e<10: e='0'+str(e)
             else : e = str(e)
-            for e_ in range(8):
+            for e_ in range(4):
                 load_example = args.example_dir + "korquad_example_{0}_{1}.bin".format(e, str(e_))
                 dataset = torch.load(load_example)
                 for _ in train_iterator:

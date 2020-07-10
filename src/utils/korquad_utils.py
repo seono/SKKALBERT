@@ -175,8 +175,9 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length,
 
     features = []
     i_num=1
+    ex_total = len(examples)
     for (example_index, example) in enumerate(examples):
-        logger.info("%d's examples reading...", i_num)
+        logger.info("%d/%d examples reading...", i_num,ex_total)
         i_num+=1
         query_tokens = tokenizer.tokenize(example.question_text)
 
