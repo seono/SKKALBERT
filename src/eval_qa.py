@@ -49,7 +49,7 @@ def set_seed(args):
         torch.cuda.manual_seed_all(args.seed)
 
 
-def evaluate(args, model, eval_examples, eval_features):
+def write_predict(args, model, eval_examples, eval_features, file_num, parse_num):
     """ Eval """
     all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
     all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
@@ -81,33 +81,32 @@ def evaluate(args, model, eval_examples, eval_features):
             all_results.append(RawResult(unique_id=unique_id,
                                          start_logits=start_logits,
                                          end_logits=end_logits))
-    output_prediction_file = os.path.join(args.output_dir, "predictions.json")
-    output_nbest_file = os.path.join(args.output_dir, "nbest_predictions.json")
+    output_prediction_file = os.path.join(args.output_dir, "predictions_{}_{}.json".format(file_num, parse_num))
+    output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}_{}.json".format(file_num, parse_num))
     write_predictions(eval_examples, eval_features, all_results,
                       args.n_best_size, args.max_answer_length,
                       False, output_prediction_file, output_nbest_file,
                       None, False, False, 0.0)
 
-    
-    with open(os.path.join(args.output_dir, "predictions.json")) as prediction_file:
-        predictions = json.load(prediction_file)
-    logger.info(json.dumps(korquad_eval(args, predictions)))
 
-
-def save_examples(args, examples, features, num1, num2):
+def save_examples(args, examples, num1, num2):
     output_examples = "eval_example_{0}_{1}.pkl".format(num1, num2)
     output_exam_file = os.path.join(args.example_dir, output_examples)
     with open(output_exam_file, 'wb') as output:
         pickle.dump(examples,output,pickle.HIGHEST_PROTOCOL)
+    logger.info("extracting end, %s saved", output_examples)
+
+def save_features(args, features, num1, num2):
     output_features = "eval_feature_{0}_{1}.pkl".format(num1, num2)
-    logger.info("extracting end, %s & %s saved", output_examples, output_features)
     output_feat_file = os.path.join(args.example_dir, output_features)
     with open(output_feat_file, 'wb') as output:
         pickle.dump(features, output, pickle.HIGHEST_PROTOCOL)
+        
+    logger.info("extracting end, %s saved", output_features)
 
 def load_and_cache_examples(args, tokenizer):
     # Load data features from cache or dataset file
-    for a in range(0,5):
+    for a in range(args.extract_file_start,5):
         a='0'+str(a)
         filename = args.predict_file+a+'.json'
         with open(filename, encoding="utf-8") as data_file:
@@ -121,13 +120,16 @@ def load_and_cache_examples(args, tokenizer):
             examples = read_squad_examples(data= data,
                                         is_training=False,
                                         version_2_with_negative=False)
-            features = convert_examples_to_features(examples=examples,
+            features = convert_examples_to_features(args,
+                                                    examples=examples,
                                                     tokenizer=tokenizer,
                                                     max_seq_length=args.max_seq_length,
                                                     doc_stride=args.doc_stride,
                                                     max_query_length=args.max_query_length,
-                                                    is_training=False)
-            save_examples(args, examples, features, a, str(i))
+                                                    is_training=False,
+                                                    file_num=a)
+            save_examples(args, examples, a, str(i))
+            save_features(args, features, a, str(i))
             i+=1
 
 
@@ -158,18 +160,25 @@ def main():
                         help="The maximum length of an answer that can be generated. This is needed because the start "
                              "and end predictions are not conditioned on one another.")
 
+    parser.add_argument("--examples_data_start", default = 0, type= int)
     parser.add_argument("--extract", default = False, type = bool,
                         help="Extract examples and features from dev file")
-    parser.add_argument("--load_and_eval", default = False, type = bool,
+    parser.add_argument("--load_and_predict", default = False, type = bool,
                         help = "load examples and feature files and evaluate")
-    parser.add_argument("--load_eval_range", default = 0, type = int,
-                        help = "load example file range")
     parser.add_argument("--example_dir", default='dev/examples/', type=str,
                         help="examples file directory path")
+    
+    parser.add_argument("--load_start", default=0, type= int,
+                        help="load file start")
+    parser.add_argument("--load_start_parse", default=0, type= int,
+                        help="if load file parsed, parse start")
     parser.add_argument("--extract_start", default=0, type= int,
                         help="extract file start")
+    parser.add_argument("--extract_file_start", default=0, type = int)
     parser.add_argument("--parse_size", default=250, type = int,
                         help="for Out Of Memory problem parse data files")
+    parser.add_argument("--evaluate", default=False, type=bool)
+    parser.add_argument("--save_time", default=7200, type=int)
 
     parser.add_argument("--batch_size", default=16, type=int,
                         help="Batch size per GPU/CPU for evaluation.")
@@ -219,19 +228,45 @@ def main():
         load_and_cache_examples(args, tokenizer)
     examples = []
     features = []
-    if args.load_and_eval is True:
-        for i in range(args.load_eval_range+1):
-            load_exam = args.example_dir+"eval_{0}_{1}.pkl".format('example',str(i))
-            load_feat = args.example_dir+"eval_{0}_{1}.pkl".format('feature',str(i))
-            with open(load_exam,'rb') as input:
-                example = pickle.load(input)
-                for e in example:
-                    examples.append(e)
-            with open(load_feat,'rb') as input:
-                feature = pickle.load(input)
-                for f in feature:
-                    features.append(f)
-        evaluate(args, model, examples, features)
+    #split data and split predict
+    if args.load_and_predict is True:
+        for a in range(args.load_start, 5):
+            a = '0'+str(a)
+            for i in range(args.load_start_parse, 40):
+                load_exam = args.example_dir+"eval_{}_{}_{}.pkl".format('example',a,str(i))
+                load_feat = args.example_dir+"eval_{}_{}_{}.pkl".format('feature',a,str(i))
+                if not os.path.exists(load_exam):
+                    continue
+                logger.info("load examples and features in file %s", a+'_'+str(i))
+                with open(load_exam,'rb') as input:
+                    example = pickle.load(input)
+                    for e in example:
+                        examples.append(e)
+                with open(load_feat,'rb') as input:
+                    feature = pickle.load(input)
+                    for f in feature:
+                        features.append(f)
+                write_predict(args, model, examples, features, a, i)
+                del features[:]
+                num=1
+                load_feat_extra = args.example_dir+"eval_{}_{}_{}_{}.pkl".format('feature',a,str(i), str(num))
+                while os.path.exists(load_feat_extra):
+                    logger.info("load_extra_feature_file_{}".format(str(num)))
+                    with open(load_feat_extra,'rb') as input:
+                        feature = pickle.load(input)
+                        for f in feature:
+                            features.append(f)
+                            
+                    write_predict(args, model, examples, features, a, str(i)+'_'+str(num))
+                    del features[:]
+                    num+=1
+                    load_feat_extra = args.example_dir+"eval_{}_{}_{}_{}.pkl".format('feature',a,str(i), str(num))
+                del examples[:]
+        #after write predictions merge prediction files in "predictions.json"
+    if args.evaluate is True:
+        with open(os.path.join(args.output_dir, "predictions.json")) as prediction_file:
+            predictions = json.load(prediction_file)
+        logger.info(json.dumps(korquad_eval(args, predictions)))
 
 
 if __name__ == "__main__":

@@ -79,7 +79,7 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truth):
 
 def evaluate(args, predictions):
     f1 = exact_match = total = 0
-    expected_version = 'KorQuAD_v2.0'
+    expected_version = 'KorQuAD_2.0'
     predict_file = args.predict_file
     for a in range(0,5):
         a='0'+str(a)
@@ -92,6 +92,7 @@ def evaluate(args, predictions):
                             ', but got dataset with ' + read_version)
         i=0
         while (i+1)*args.parse_size<= len(datas["data"]):
+            logger.info("evaluate data {}_{}".format(a,str(i)))
             dataset = datas["data"][i*args.parse_size:(i+1)*args.parse_size]
             for paragraph in dataset:
                 for qa in paragraph['qas']:
@@ -107,14 +108,14 @@ def evaluate(args, predictions):
                         exact_match_score, prediction, ground_truth)
                     f1 += metric_max_over_ground_truths(
                         f1_score, prediction, ground_truth)
-
+            i+=1
     exact_match = 100.0 * exact_match / total
     f1 = 100.0 * f1 / total
     return {'exact_match': exact_match, 'f1': f1}
 
 
 if __name__ == '__main__':
-    expected_version = 'KorQuAD_v2.0'
+    expected_version = 'KorQuAD_2.0'
     parser = argparse.ArgumentParser(
         description='Evaluation for KorQuAD ' + expected_version)
     parser.add_argument('dataset_file', help='Dataset file')

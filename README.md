@@ -5,6 +5,16 @@ This is a repository of Korean ALBERT model.
 run_korquad dataset 2.1버전도 상관없음 evaluate할 때 dev파일도 같으니 -> 오히려 데이터 줄어서 추천
 	
 
+
+>20.08.03
+
+    우선 korquad 2.0이 위키피디아 모든 html tag까지 포함하여 text를 그대로 data로 가져왔기에 문단별로 잘라서 korquad1.0이나 squad format에 맞게 전처리
+
+    Mecab을 이용하여 형태소 분석기를 추가
+
+    최종적으로 examples에서 featuref를 추출하는 과정에서 Out Of Memory가 발생하기에 데이터를 나눠서 학습하거나 평가해야 하며 이는 이후에 추가적인 업데이트에서 변경될 예정이다.
+
+
 >20.04.26
  run_korquad.py 업데이트
 
@@ -121,3 +131,11 @@ python run_qa.py \
   --num_train_epochs 4.0 \
   --adam_epsilon 1e-6 \
   --warmup_proportion 0.1
+
+>20.07.10
+
+    evaluate관련 기존 korquad 1.0 버전에 맞춰져 있던 코드 변경
+
+    1. korquad2.0 데이터 크기에 맞는 parsing 추가
+
+    2. korquad2.0 json dataset 구조에 맞는 code로 변경

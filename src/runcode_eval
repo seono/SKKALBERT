@@ -11,5 +11,8 @@ python eval_qa.py \
   --batch_size 16 \
   --n_best_size 20 \
   --extract True \
+  --extract_start 0 \
+  --extract_file_start 0 \
   --example_dir dev/examples/ \
-  --parse_size 50
+  --parse_size 1 \
+  --examples_data_start 0

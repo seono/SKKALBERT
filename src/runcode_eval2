@@ -10,6 +10,4 @@ python eval_qa.py \
   --max_answer_length 30 \
   --batch_size 16 \
   --n_best_size 20 \
-  --load_and_eval True \
-  --load_eval_range 0 \
-  --example_dir dev/examples/
+  --evaluate True
