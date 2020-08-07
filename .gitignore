@@ -153,3 +153,5 @@ src/predictions/
 sample.json
 korquad.py
 preprocess.py
+
+korquad1/*
