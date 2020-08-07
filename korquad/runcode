@@ -1,0 +1,68 @@
+!python3 run_qa.py \
+  --checkpoint large_v2/large_v2.bin \
+  --config_file large_v2/large_config.json \
+  --output_dir large_v2/output/ \
+  --vocab_file large_v2/large_v2_32k_vocab.txt \
+  --train_file data/korquad/KorQuAD_v1.0_train.json \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --max_query_length 64 \
+  --max_answer_length 30 \
+  --per_gpu_train_batch_size 6 \
+  --learning_rate 3e-5 \
+  --num_train_epochs 2.0 \
+  --adam_epsilon 1e-6 \
+  --warmup_proportion 0.1
+
+  !python3 eval_qa.py \
+  --checkpoint bert_small/korquad_small.bin \
+  --config_file bert_small/bert_small.json \
+  --output_dir bert_small/output/ \
+  --vocab_file bert_small/ko_vocab_32k.txt \
+  --predict_file data/korquad/KorQuAD_v1.0_dev.json \
+  --max_seq_length 384 \
+  --doc_stride 64 \
+  --max_query_length 64 \
+  --max_answer_length 30 \
+  --batch_size 6 \
+  --n_best_size 20
+
+
+  large_v1 : {"exact_match": 86.0408728784205, "f1": 94.04325514495754}
+  large_v2 : {"exact_match": 15.258053342570141, "f1": 41.08388527883563}
+  small : {"exact_match": 5.368895046761344, "f1": 26.715308380407222}
+
+  large_v2 : {"exact_match": 15.327329407689643, "f1": 41.09119968590994} doc_stride 128 at evaluate
+
+===============================================================================================================================
+python3 run_qa.py \
+  --checkpoint large_v2/large_v2.bin \
+  --config_file large_v2/large_config.json \
+  --output_dir large_v2/output/ \
+  --vocab_file large_v2/large_v2_32k_vocab.txt \
+  --train_file data/korquad/KorQuAD_v1.0_train.json \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --max_query_length 128 \
+  --max_answer_length 30 \
+  --per_gpu_train_batch_size 4 \
+  --learning_rate 3e-5 \
+  --num_train_epochs 2.0 \
+  --adam_epsilon 1e-6 \
+  --warmup_proportion 0.1
+
+python3 eval_qa.py \
+  --checkpoint large_v2/korquad_3e-05_4_1_2_.bin \
+  --config_file large_v2/large_config.json \
+  --output_dir large_v2/output/ \
+  --vocab_file large_v2/large_v2_32k_vocab.txt \
+  --predict_file data/korquad/KorQuAD_v1.0_dev.json \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --max_query_length 128 \
+  --max_answer_length 30 \
+  --batch_size 6 \
+  --n_best_size 20
+
+  
+  large_v2 : {"exact_match": 65.05022514721163, "f1": 91.61082102098146}
