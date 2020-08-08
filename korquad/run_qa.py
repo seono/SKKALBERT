@@ -156,7 +156,11 @@ def load_and_cache_examples(args, tokenizer):
     input_file = args.train_file
     if args.test is True:
         logger.info("Test")
-        examples = read_squad_examples(input_file="data/korquad/sample.json", is_training=True, version_2_with_negative=False)
+        examples = read_squad_examples(input_file="data/korquad/sample.json",
+                                        eda_type=args.eda_type,
+                                        is_training=True,
+                                        version_2_with_negative=False,
+                                        args=args)
         features = convert_examples_to_features(examples=examples,
                                                 tokenizer=tokenizer,
                                                 max_seq_length=args.max_seq_length,
@@ -181,7 +185,7 @@ def load_and_cache_examples(args, tokenizer):
         features = torch.load(cached_features_file)
     else:
         logger.info("Creating features from dataset file at %s", input_file)
-        examples = read_squad_examples(input_file=args.train_file, is_training=True, version_2_with_negative=False)
+        examples = read_squad_examples(input_file=args.train_file, is_training=True, version_2_with_negative=False, args=args)
         features = convert_examples_to_features(examples=examples,
                                                 tokenizer=tokenizer,
                                                 max_seq_length=args.max_seq_length,
@@ -218,6 +222,13 @@ def main():
                         help="SQuAD json for training. E.g., train-v1.1.json")
 
     parser.add_argument("--test", default=False, type=bool, help="Test by sample")
+######ADD for EDA#######
+    parser.add_argument("--eda_type", default="sr", type=str, help="eda type e.g) sr, ri, rs, rd")
+    parser.add_argument("--alpha", default=0.1, type=float, help="For eda")
+    parser.add_argument("--num_aug", default=2, type=int, help="For eda")
+    parser.add_argument("--eda_model_name", default="word2vec", type=str, help="For eda")
+    parser.add_argument("--min_score", default=0.7, type=float, help="For eda")
+########################
 
     parser.add_argument("--max_seq_length", default=512, type=int,
                         help="The maximum total input sequence length after WordPiece tokenization. Sequences "

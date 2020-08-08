@@ -7,6 +7,7 @@ import math
 from tqdm import tqdm, trange
 
 from io import open
+from .eda import eda, WordEmbeddingModel_init
 
 from .tokenization import BasicTokenizer, whitespace_tokenize
 
@@ -82,8 +83,29 @@ class InputFeatures(object):
         self.end_position = end_position
         self.is_impossible = is_impossible
 
+def question_augment(example, args):
 
-def read_squad_examples(input_file, is_training, version_2_with_negative):
+    aug_sentences = eda(example.question_text,
+                        eda_type = args.eda_type,
+                        alpha = args.alpha,
+                        num_aug = args.num_aug,
+                        min_score = args.min_score)
+    augmented_examples = []
+    #last element of augmented_senteces is orignal sentence so skip
+    for new_question_text in aug_sentences[:-1]:
+        new_example = SquadExample(
+                        qas_id=example.qas_id,
+                        question_text=new_question_text,
+                        doc_tokens=example.doc_tokens,
+                        orig_answer_text=example.orig_answer_text,
+                        start_position=example.start_position,
+                        end_position=example.end_position,
+                        is_impossible=example.is_impossible)
+        augmented_examples.append(new_example)
+    return augmented_examples
+
+def read_squad_examples(input_file, is_training, version_2_with_negative, args):
+    WordEmbeddingModel_init(model_name=args.eda_model_name)
     """Read a SQuAD json file into a list of SquadExample."""
     with open(input_file, "r", encoding='utf-8') as reader:
         input_data = json.load(reader)["data"]
@@ -158,6 +180,9 @@ def read_squad_examples(input_file, is_training, version_2_with_negative):
                     end_position=end_position,
                     is_impossible=is_impossible)
                 examples.append(example)
+                augmented_examples = question_augment(example, args)
+                for augmented_example in augmented_examples:
+                    examples.append(augmented_example)
     return examples
 
 
