@@ -4,7 +4,19 @@ This is a repository of Korean ALBERT model.
 
 run_korquad dataset 2.1버전도 상관없음 evaluate할 때 dev파일도 같으니 -> 오히려 데이터 줄어서 추천
 	
+>eda 적용
 
+question에서 khaiii 형태소 분석하여 
+
+SAVE_TAG = ["NNG", "NNB", "NP", "NR", "VV", "VA", "VX", "VCP", "VCN"]
+
+태그 후보군을 정하였다. 나머지 태그는 --가 --이 --를 --다 --가 이런 단어라서 eda에서 random synonym과는 거리가 멀어 제외하고 용언과 체언만 포함하였다.
+
+그에 따라 train dataset qeustion 지문에서 해당하는 단어들에 대한 synonym을 word2vec모델을 활용하여 뽑아 dict 구조로 만든 뒤 사용하였다. data/syn/디렉토리에 저장
+
+aug_num 2, alpha 0.1으로 eda_type=random synonym으로 한 결과 정확도가 더 떨어졌다...
+
+min_score를 0.7로 설정하여 synonym set을 만들었는데 0.8로 높이거나 synonym를 다른 방법으로 탐색하여 정확도를 높여야 할 듯 하다.
 
 >20.08.03
 

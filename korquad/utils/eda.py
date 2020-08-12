@@ -2,6 +2,14 @@ import random
 from random import shuffle
 random.seed(1)
 from .models.word_eval import WordEmbeddingEvaluator
+import os
+import re
+import khaiii
+import pickle
+api = khaiii.KhaiiiApi()
+api.open()
+
+REMOVE_ENTER = re.compile("\\n")
 
 def WordEmbeddingModel_init(model_name):
 
@@ -10,48 +18,68 @@ def WordEmbeddingModel_init(model_name):
         embedd_model = WordEmbeddingEvaluator(
             vecs_txt_fname = "notebooks/embedding/data/word-embeddings/fasttext/fasttext.vec",
 			vecs_bin_fname = "notebooks/embedding/data/word-embeddings/fasttext/fasttext.bin",
-			method = "fasttext", dim=100, tokenizer_name="mecab")
+			method = "fasttext", dim=100, tokenizer_name="khaiii")
     elif model_name == "glove":
         embedd_model = WordEmbeddingEvaluator(
             vecs_txt_fname = "notebooks/embedding/data/word-embeddings/glove/glove.txt",
-            method="glove", dim=100, tokenizer_name="mecab")
+            method="glove", dim=100, tokenizer_name="khaiii")
     elif model_name == "swivel":
         embedd_model = WordEmbeddingEvaluator(
             vecs_txt_fname = "notebooks/embedding/data/word-embeddings/swivel/row_embedding.tsv",
-			method="swivel", dim=100, tokenizer_name="mecab")
+			method="swivel", dim=100, tokenizer_name="khaiii")
     else:
         embedd_model = WordEmbeddingEvaluator(
             vecs_txt_fname = "notebooks/embedding/data/word-embeddings/word2vec/word2vec",
-            method="word2vec", dim=100, tokenizer_name="mecab")
+            method="word2vec", dim=100, tokenizer_name="khaiii")
 
-def synonym_replacement(words, n, min_score):
-    new_words = words.copy()
-    random_word_list = list(set([word for word in words]))
-    random.shuffle(random_word_list)
-    num_replaced = 0
-    for random_word in random_word_list:
-        synonyms = get_synonyms(random_word, min_score)
+def synonym_dict_init(dict_file_name):
+    global synonym_dict
+    if os.path.exists(dict_file_name):
+        print("load file {}".format(dict_file_name))
+        with open(dict_file_name,"rb") as p:
+            synonym_dict = pickle.load(p)
+    
+def synonym_replacement(sentence, n, min_score):
+    SAVE_TAG = ["NNG", "NNB", "NP", "NR", "VV", "VA", "VX", "VCP", "VCN"]
+    sentence = re.sub(REMOVE_ENTER, ' ', sentence)
+    target_idx = []
+    words = []
+    i = 0
+    num_replaced=0
+    for word in api.analyze(sentence):
+        for m in word.morphs:
+            words.append(m.lex)
+            if m.tag in SAVE_TAG:
+                target_idx.append(i)
+            i+=1
+    random.shuffle(target_idx)
+    for random_idx in target_idx:
+        synonyms = get_synonyms(words[random_idx], min_score)
         if len(synonyms) >= 1:
             synonym = random.choice(list(synonyms))
-            new_words = [synonym if word == random_word else word for word in new_words]
-            #print("replaced", random_word, "with", synonym)
+            words[random_idx] = synonym
             num_replaced += 1
         if num_replaced >= n: #only replace up to n words
             break
 
-    #this is stupid but we need it, trust me
-    sentence = ' '.join(new_words)
-    new_words = sentence.split(' ')
+    return words
 
-    return new_words
 
-def get_synonyms(word, min_score=0.7):
+def get_synonyms(word, min_score=0.8):
     synonyms = set()
-    for word, score in embedd_model.most_similar(word,topn=10):
-        if(score<min_score):
-            break
-        synonyms.add(word)
-    return list(synonyms)
+    if(len(synonym_dict)>0):
+        if word in synonym_dict:
+            for w, score in synonym_dict[word][:10]:
+                if(score<min_score):
+                    break
+                synonyms.add(w)
+        return list(synonyms)
+    else:
+        for w, score in embedd_model.most_similar(word,topn=10):
+            if(score<min_score):
+                break
+            synonyms.add(w)
+        return list(synonyms)
 
 ########################################################################
 # Random deletion
@@ -143,8 +171,7 @@ def eda(sentence, eda_type, alpha=0.1, num_aug=9, min_score=0.7):
     #sr
     if eda_type == "sr":
         for _ in range(num_new_per_technique):
-            a_words = synonym_replacement(words, n, min_score)
-            a_words.append("?")
+            a_words = synonym_replacement(sentence+"?", n, min_score)
             augmented_sentences.append(' '.join(a_words))
     elif eda_type == "ri":
         for _ in range(num_new_per_technique):

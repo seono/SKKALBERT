@@ -7,7 +7,7 @@ import math
 from tqdm import tqdm, trange
 
 from io import open
-from .eda import eda, WordEmbeddingModel_init
+from .eda import eda, WordEmbeddingModel_init, synonym_dict_init
 
 from .tokenization import BasicTokenizer, whitespace_tokenize
 
@@ -104,8 +104,10 @@ def question_augment(example, args):
         augmented_examples.append(new_example)
     return augmented_examples
 
-def read_squad_examples(input_file, is_training, version_2_with_negative, args):
-    WordEmbeddingModel_init(model_name=args.eda_model_name)
+def read_squad_examples(input_file, is_training, version_2_with_negative, args=None):
+    if is_training:
+        WordEmbeddingModel_init(model_name=args.eda_model_name)
+        synonym_dict_init(dict_file_name=args.dict_file_name)
     """Read a SQuAD json file into a list of SquadExample."""
     with open(input_file, "r", encoding='utf-8') as reader:
         input_data = json.load(reader)["data"]
@@ -180,9 +182,10 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, args):
                     end_position=end_position,
                     is_impossible=is_impossible)
                 examples.append(example)
-                augmented_examples = question_augment(example, args)
-                for augmented_example in augmented_examples:
-                    examples.append(augmented_example)
+                if is_training:
+                    augmented_examples = question_augment(example, args)
+                    for augmented_example in augmented_examples:
+                        examples.append(augmented_example)
     return examples
 
 
