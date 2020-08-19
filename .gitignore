@@ -156,3 +156,9 @@ preprocess.py
 
 korquad1/*
 korquad1_0/*
+
+
+
+models/*
+*.bin
+*.pt

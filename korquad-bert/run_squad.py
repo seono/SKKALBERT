@@ -28,7 +28,8 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
-from evaluate_v1_0 import eval_during_train
+from eval_korquad import eval_during_train
+from utils.squad_utils import get_squad_train_examples, get_now_str
 
 from transformers import (
     WEIGHTS_NAME,
@@ -265,8 +266,8 @@ def train(args, train_dataset, model, tokenizer):
 
                         # Write the evaluation result on file
                         logger.info("***** Official Eval results *****")
-                        with open("eval_result_{}_{}.txt".format(list(filter(None, args.model_name_or_path.split("/"))).pop(),
-                                                                 str(args.max_seq_length)), "a", encoding='utf-8') as f:
+                        with open("./result/eval_result_{}_{}_{}.txt".format(list(filter(None, args.model_name_or_path.split("/"))).pop(),
+                                                                 str(args.max_seq_length), str(args.output_dir)), "a", encoding='utf-8') as f:
                             official_eval_results = eval_during_train(args)
                             f.write("Step: {}\n".format(global_step))
                             for key in sorted(official_eval_results.keys()):
@@ -455,15 +456,27 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
 
     # Load data features from cache or dataset file
     input_dir = args.data_dir if args.data_dir else "."
-    cached_features_file = os.path.join(
-        input_dir,
-        "cached_{}_{}_{}".format(
-            "dev" if evaluate else "train",
-            list(filter(None, args.model_name_or_path.split("/"))).pop(),
-            str(args.max_seq_length),
-        ),
-    )
-
+    if evaluate:
+        cached_features_file = os.path.join(
+            input_dir,
+            "cached_{}_{}_{}_{}".format(
+                "dev" if evaluate else "train",
+                list(filter(None, args.model_name_or_path.split("/"))).pop(),
+                str(args.max_seq_length),
+                str(args.output_dir)
+            ),
+        )
+    else:
+        cached_features_file = os.path.join(
+            input_dir,
+            "cached_{}_{}_{}_{}_{}".format(
+                "dev" if evaluate else "train",
+                list(filter(None, args.model_name_or_path.split("/"))).pop(),
+                str(args.max_seq_length),
+                str(args.output_dir),
+                get_now_str().replace(":", "_")
+            ),
+        )
     # Init features and dataset from cache if it exists
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
         logger.info("Loading features from cached file %s", cached_features_file)
@@ -488,11 +501,19 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             tfds_examples = tfds.load("squad")
             examples = SquadV1Processor().get_examples_from_dataset(tfds_examples, evaluate=evaluate)
         else:
+            """
+                Add augmented sentences together in returned examples
+                Use utils.squad_utils get_train_squad_examples() instead for including augmented sentences
+                (Dev examples need not to be augmented)
+            """
             processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
             if evaluate:
                 examples = processor.get_dev_examples(args.data_dir, filename=args.predict_file)
             else:
-                examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
+                if args.do_eda:
+                    examples = get_squad_train_examples(args.data_dir, args.train_file, args)
+                else:
+                    examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
 
         features, dataset = squad_convert_examples_to_features(
             examples=examples,
@@ -504,10 +525,10 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             return_dataset="pt",
             threads=args.threads,
         )
-
-        if args.local_rank in [-1, 0]:
-            logger.info("Saving features into cached file %s", cached_features_file)
-            torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
+        ############### Changed not to save features #############
+        # if args.local_rank in [-1, 0]:
+        #     logger.info("Saving features into cached file %s", cached_features_file)
+        #     torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
 
     if args.local_rank == 0 and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
@@ -543,7 +564,12 @@ def main():
         required=True,
         help="The output directory where the model checkpoints and predictions will be written.",
     )
-
+    ######## For EDA ############
+    parser.add_argument("--do_eda", action="store_true", help="EDA")
+    parser.add_argument("--op", default="sr", type=str, help="eda type e.g) sr, ri, rs, rd")
+    parser.add_argument("--alpha", default=0.1, type=float, help="Percent of words in a sentence that are changed when EDA")
+    parser.add_argument("--num_aug", default=2, type=int, help="Number of augmented sentences per one sentence")
+    parser.add_argument("--eda_all_op", action="store_true", help="All EDA operations will be done at given num_aug")
     # Other parameters
     parser.add_argument(
         "--data_dir",
@@ -708,6 +734,8 @@ def main():
     parser.add_argument("--threads", type=int, default=1, help="multiple threads for converting example to features")
     args = parser.parse_args()
 
+
+    
     if args.doc_stride >= args.max_seq_length - args.max_query_length:
         logger.warning(
             "WARNING - You've set a doc stride which may be superior to the document length in some "

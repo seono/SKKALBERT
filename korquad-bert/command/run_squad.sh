@@ -1,0 +1,83 @@
+python run_squad.py \
+  --model_type bert \
+  --model_name_or_path bert-base-uncased \
+  --do_train \
+  --do_eval \
+  --data_dir data/squad1 \
+  --train_file rd-2-0.1-train-v1.1.json \
+  --predict_file dev-v1.1.json \
+  --evaluate_during_training \
+  --learning_rate 3e-5 \
+  --num_train_epochs 2 \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --logging_steps 5000 \
+  --save_steps 5000 \
+  --output_dir models_bert_rd_2 \
+  --per_gpu_train_batch_size 48 \
+  --per_gpu_eval_batch_size 8
+
+  python run_squad.py \
+  --model_type albert \
+  --model_name_or_path albert-base-v1 \
+  --do_train \
+  --do_eval \
+  --data_dir data/squad1 \
+  --train_file rd-2-0.1-train-v1.1.json \
+  --predict_file dev-v1.1.json \
+  --evaluate_during_training \
+  --learning_rate 5e-5 \
+  --num_train_epochs 2 \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --logging_steps 5000 \
+  --save_steps 5000 \
+  --output_dir pre_albert_rd \
+  --per_gpu_train_batch_size 48 \
+  --per_gpu_eval_batch_size 8
+
+python run_squad.py \
+  --model_type albert \
+  --model_name_or_path albert-base-v1 \
+  --do_train \
+  --do_eval \
+  --do_eda \
+  --op ri \
+  --alpha 0.1 \
+  --num_aug 2 \
+  --data_dir data/squad1 \
+  --train_file train-v1.1.json \
+  --predict_file dev-v1.1.json \
+  --evaluate_during_training \
+  --learning_rate 5e-5 \
+  --num_train_epochs 2 \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --logging_steps 5000 \
+  --save_steps 5000 \
+  --output_dir new_albert_ri_2_0.1_re \
+  --per_gpu_train_batch_size 48 \
+  --per_gpu_eval_batch_size 8
+
+
+  python run_squad.py \
+  --model_type albert \
+  --model_name_or_path albert-base-v1 \
+  --do_train \
+  --do_eval \
+  --op sr \
+  --alpha 0.1 \
+  --num_aug 4 \
+  --data_dir data/squad1 \
+  --train_file train-v1.1.json \
+  --predict_file dev-v1.1.json \
+  --evaluate_during_training \
+  --learning_rate 5e-5 \
+  --num_train_epochs 2 \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --logging_steps 5000 \
+  --save_steps 5000 \
+  --output_dir new_albert_sr_4_0.1 \
+  --per_gpu_train_batch_size 48 \
+  --per_gpu_eval_batch_size 8

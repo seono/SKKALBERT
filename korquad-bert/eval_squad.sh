@@ -1,1 +1,0 @@
-python evaluate_v1_0.py data/KorQuAD_v1.0_dev.json models/predictions_.json
