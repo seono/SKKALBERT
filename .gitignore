@@ -142,7 +142,6 @@ bert_small/*
 test.py
 test2.py
 test3.py
-*.txt
 *.whl
 *.csv
 
@@ -162,3 +161,4 @@ korquad1_0/*
 models/*
 *.bin
 *.pt
+korquad-bert/result/*
