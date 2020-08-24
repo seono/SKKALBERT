@@ -125,24 +125,34 @@ def get_squad_train_examples(data_dir, filename=None, args=None):
         
                 # Add augmented sentences  
                 if args.op is not None:
-                    aug_examples = augment_question(example, args, start_position_character)
+                    aug_examples = augment_squad_part(example, args, start_position_character)
                     for aug_example in aug_examples:
                         examples.append(aug_example)
     return examples
 
 
-def augment_question(example, args, start_position_character):
+def augment_squad_part(example, args, start_position_character):
     if args.eda_all_op:
         aug_sentences = eda(example.question_text, alpha_sr=args.alpha, alpha_ri=args.alpha, alpha_rs=args.alpha, p_rd=args.alpha, num_aug=args.num_aug)
     else:
-        aug_sentences = eda_one_op(example.question_text, args.op, alpha=args.alpha, num_aug=args.num_aug)
+        aug_sentences = eda_one_op(example.question_text, args, alpha=args.alpha, num_aug=args.num_aug)
     aug_examples = []
-    # To be modified to implement EDA on context part, not only question part
     for aug_sentence in aug_sentences:
-        new_example = SquadExample(
+        if args.eda_part == 'question':
+            new_example = SquadExample(
+                            qas_id=example.qas_id,
+                            question_text=aug_sentence,
+                            context_text=example.context_text,
+                            answer_text=example.answer_text,
+                            start_position_character=start_position_character,
+                            answers=example.answers,
+                            title=example.title,
+                            is_impossible=example.is_impossible)
+        elif args.eda_part == 'context':
+            new_example = SquadExample(
                         qas_id=example.qas_id,
-                        question_text=aug_sentence,
-                        context_text=example.context_text,
+                        question_text=example.question_text,
+                        context_text=aug_sentences,
                         answer_text=example.answer_text,
                         start_position_character=start_position_character,
                         answers=example.answers,

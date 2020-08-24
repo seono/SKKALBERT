@@ -58,13 +58,17 @@ def get_only_chars(line):
 # Synonym replacement
 # Replace n words in the sentence with synonyms from wordnet
 ########################################################################
-def synonym_replacement(words, n):
+def synonym_replacement(words, n, context=False):
 	new_words = words.copy()
 	random_word_list = list(set([word for word in words if word not in stop_words]))
 	random.shuffle(random_word_list)
 	num_replaced = 0
 	for random_word in random_word_list:
 		synonyms = get_synonyms(random_word)
+		
+		if context:
+			synonyms = [word for word in synonyms if len(word) == 1] # Remain only 1 word synonym
+
 		if len(synonyms) >= 1:
 			synonym = random.choice(list(synonyms))
 			new_words = [synonym if word == random_word else word for word in new_words]
@@ -75,7 +79,6 @@ def synonym_replacement(words, n):
 	# Sometimes WordNet replaces a single word with a two-word synonym, which need to be separated to two words
 	sentence = ' '.join(new_words)
 	new_words = sentence.split(' ')
-
 	return new_words
 
 def get_synonyms(word):
@@ -143,7 +146,7 @@ def swap_word(new_words):
 # Randomly insert n words into the sentence 
 ########################################################################
 
-def random_insertion(words, n): # Needs to be fixed (random_insertion should take stop words into account)
+def random_insertion(words, n): 
 	new_words = words.copy()
 	for _ in range(n):
 		add_word(new_words)
@@ -180,22 +183,18 @@ def eda(sentence, alpha_sr=0.1, alpha_ri=0.1, alpha_rs=0.1, p_rd=0.1, num_aug=9)
 	n_ri = max(1, int(alpha_ri*num_words))
 	n_rs = max(1, int(alpha_rs*num_words))
 
-	#sr
 	for _ in range(num_new_per_technique):
 		a_words = synonym_replacement(words, n_sr)
 		augmented_sentences.append(' '.join(a_words))
 
-	#ri
 	for _ in range(num_new_per_technique):
 		a_words = random_insertion(words, n_ri)
 		augmented_sentences.append(' '.join(a_words))
 
-	#rs
 	for _ in range(num_new_per_technique):
 		a_words = random_swap(words, n_rs)
 		augmented_sentences.append(' '.join(a_words))
 
-	#rd
 	for _ in range(num_new_per_technique):
 		a_words = random_deletion(words, p_rd)
 		augmented_sentences.append(' '.join(a_words))
@@ -211,8 +210,7 @@ def eda(sentence, alpha_sr=0.1, alpha_ri=0.1, alpha_rs=0.1, p_rd=0.1, num_aug=9)
 		augmented_sentences = [s for s in augmented_sentences if random.uniform(0, 1) < keep_prob]
 	return augmented_sentences
 
-
-def eda_one_op(sentence, op, alpha=0.1, num_aug=2):
+def eda_one_op(sentence, args, alpha=0.1, num_aug=2):
 	sentence = get_only_chars(sentence)
 	words = sentence.split(' ')
 	words = [word for word in words if word is not '']
@@ -228,14 +226,20 @@ def eda_one_op(sentence, op, alpha=0.1, num_aug=2):
 
 	for _ in range(num_new):
 		try:
-			if op == 'sr':
-				a_words = synonym_replacement(words, nn)
-			elif op == 'ri':
-				a_words = random_insertion(words, nn)
-			elif op == 'rd':
-				a_words = random_deletion(words, alpha)	
-			elif op == 'rs':
-				a_words = random_swap(words, nn)
+			if args.eda_part == 'context':
+				a_words = synonym_replacement(words, nn, True)
+				'''
+					Other methods (ri, rs, rd) in context part to be done later
+				'''
+			else:
+				if args.op == 'sr':
+					a_words = synonym_replacement(words, nn)
+				elif args.op == 'ri':
+					a_words = random_insertion(words, nn)
+				elif args.op == 'rd':
+					a_words = random_deletion(words, alpha)	
+				elif args.op == 'rs':
+					a_words = random_swap(words, nn)
 		except Exception as e:
 			print(e)
 		augmented_sentences.append(' '.join(a_words))
