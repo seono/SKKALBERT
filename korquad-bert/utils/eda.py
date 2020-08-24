@@ -1,11 +1,14 @@
 # Easy data augmentation techniques for text classification
 # Jason Wei and Kai Zou
-
+import re
 import random
 from random import shuffle
 random.seed(1)
+#for the first time you use wordnet
+#import nltk
+#nltk.download('wordnet')
+from nltk.corpus import wordnet 
 
-#stop words list
 stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 
 			'ours', 'ourselves', 'you', 'your', 'yours', 
 			'yourself', 'yourselves', 'he', 'him', 'his', 
@@ -29,14 +32,14 @@ stop_words = ['i', 'me', 'my', 'myself', 'we', 'our',
 			'should', 'now', '']
 
 #cleaning up text
-import re
+
 def get_only_chars(line):
 
     clean_line = ""
 
     line = line.replace("’", "")
     line = line.replace("'", "")
-    line = line.replace("-", " ") #replace hyphens with spaces
+    line = line.replace("-", " ") 
     line = line.replace("\t", " ")
     line = line.replace("\n", " ")
     line = line.lower()
@@ -48,20 +51,13 @@ def get_only_chars(line):
             clean_line += ' '
 
     clean_line = re.sub(' +',' ',clean_line) #delete extra spaces
-    # if clean_line[0] == ' ':
-    #     clean_line = clean_line[1:]
+
     return clean_line
 
 ########################################################################
 # Synonym replacement
 # Replace n words in the sentence with synonyms from wordnet
 ########################################################################
-
-#for the first time you use wordnet
-#import nltk
-#nltk.download('wordnet')
-from nltk.corpus import wordnet 
-
 def synonym_replacement(words, n):
 	new_words = words.copy()
 	random_word_list = list(set([word for word in words if word not in stop_words]))
@@ -72,7 +68,6 @@ def synonym_replacement(words, n):
 		if len(synonyms) >= 1:
 			synonym = random.choice(list(synonyms))
 			new_words = [synonym if word == random_word else word for word in new_words]
-			#print("replaced", random_word, "with", synonym)
 			num_replaced += 1
 		if num_replaced >= n: #only replace up to n words
 			break
@@ -108,10 +103,8 @@ def random_deletion(words, p):
 	new_words = []
 	for word in words:
 		r = random.uniform(0, 1)
-		# print("%s : r is %f"%(word, r))
 		if r > p:
 			new_words.append(word)
-		# print(new_words)
 	#if you end up deleting all words, just return a random word
 	if len(new_words) == 0:
 		rand_int = random.randint(0, len(words)-1)
@@ -134,11 +127,6 @@ def random_swap(words, n):
 	return new_words
 
 def swap_word(new_words):
-	'''
-	idx1, idx2 = random.sample(range(len(new_words)), 2)
-	new_words[idx1], new_words[idx2] = new_words[idx2], new_words[idx1]
-	return new_words
-	'''
 	random_idx_1 = random.randint(0, len(new_words)-1)
 	random_idx_2 = random_idx_1
 	counter = 0
@@ -166,6 +154,8 @@ def add_word(new_words):
 	counter = 0
 	while len(synonyms) < 1:
 		random_word = new_words[random.randint(0, len(new_words)-1)]
+		if random_word not in stop_words: # Not include stop_words
+			continue
 		synonyms = get_synonyms(random_word)
 		counter += 1
 		if counter >= 10:
@@ -179,7 +169,6 @@ def add_word(new_words):
 ########################################################################
 
 def eda(sentence, alpha_sr=0.1, alpha_ri=0.1, alpha_rs=0.1, p_rd=0.1, num_aug=9):
-    # sentence = sentence.replace('?', '')
 	sentence = get_only_chars(sentence)
 	words = sentence.split(' ')
 	words = [word for word in words if word is not '']
@@ -194,25 +183,21 @@ def eda(sentence, alpha_sr=0.1, alpha_ri=0.1, alpha_rs=0.1, p_rd=0.1, num_aug=9)
 	#sr
 	for _ in range(num_new_per_technique):
 		a_words = synonym_replacement(words, n_sr)
-		a_words.append("?")
 		augmented_sentences.append(' '.join(a_words))
 
 	#ri
 	for _ in range(num_new_per_technique):
 		a_words = random_insertion(words, n_ri)
-		a_words.append("?")
 		augmented_sentences.append(' '.join(a_words))
 
 	#rs
 	for _ in range(num_new_per_technique):
 		a_words = random_swap(words, n_rs)
-		a_words.append("?")
 		augmented_sentences.append(' '.join(a_words))
 
 	#rd
 	for _ in range(num_new_per_technique):
 		a_words = random_deletion(words, p_rd)
-		a_words.append("?")
 		augmented_sentences.append(' '.join(a_words))
 	
 	augmented_sentences = [get_only_chars(sentence) for sentence in augmented_sentences]
@@ -233,9 +218,15 @@ def eda_one_op(sentence, op, alpha=0.1, num_aug=2):
 	words = [word for word in words if word is not '']
 	num_words = len(words)
 	augmented_sentences = []
+
 	nn = max(1, int(alpha*num_words))
 
-	for _ in range(num_aug):
+	if not isinstance(num_aug, int):
+		num_new = max(1, int(num_aug))
+	else:
+		num_new = num_aug
+
+	for _ in range(num_new):
 		try:
 			if op == 'sr':
 				a_words = synonym_replacement(words, nn)
@@ -251,7 +242,9 @@ def eda_one_op(sentence, op, alpha=0.1, num_aug=2):
 	augmented_sentences = [get_only_chars(sentence) for sentence in augmented_sentences]
 	shuffle(augmented_sentences)
 	
-	if num_aug < 1:
+	if num_aug >= 1:
+		augmented_sentences = augmented_sentences[:num_aug]
+	else:
 		keep_prob = num_aug / len(augmented_sentences)
 		augmented_sentences = [s for s in augmented_sentences if random.uniform(0, 1) < keep_prob]
  

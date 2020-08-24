@@ -132,14 +132,12 @@ def get_squad_train_examples(data_dir, filename=None, args=None):
 
 
 def augment_question(example, args, start_position_character):
-    # print(example.question_text)
     if args.eda_all_op:
         aug_sentences = eda(example.question_text, alpha_sr=args.alpha, alpha_ri=args.alpha, alpha_rs=args.alpha, p_rd=args.alpha, num_aug=args.num_aug)
     else:
         aug_sentences = eda_one_op(example.question_text, args.op, alpha=args.alpha, num_aug=args.num_aug)
-    # print(aug_sentences)
     aug_examples = []
-    # print(example.start_position)
+    # To be modified to implement EDA on context part, not only question part
     for aug_sentence in aug_sentences:
         new_example = SquadExample(
                         qas_id=example.qas_id,

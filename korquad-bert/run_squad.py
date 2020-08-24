@@ -570,6 +570,7 @@ def main():
     parser.add_argument("--alpha", default=0.1, type=float, help="Percent of words in a sentence that are changed when EDA")
     parser.add_argument("--num_aug", default=2, type=int, help="Number of augmented sentences per one sentence")
     parser.add_argument("--eda_all_op", action="store_true", help="All EDA operations will be done at given num_aug")
+    parser.add_argument("--replacement", default="thesaurus", type=str, help="Replacement type e.g.) thesaurus, word_emb, contextual_word_emb")
     # Other parameters
     parser.add_argument(
         "--data_dir",
