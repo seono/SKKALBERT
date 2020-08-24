@@ -152,7 +152,7 @@ def augment_squad_part(example, args, start_position_character):
             new_example = SquadExample(
                         qas_id=example.qas_id,
                         question_text=example.question_text,
-                        context_text=aug_sentences,
+                        context_text=aug_sentence,
                         answer_text=example.answer_text,
                         start_position_character=start_position_character,
                         answers=example.answers,

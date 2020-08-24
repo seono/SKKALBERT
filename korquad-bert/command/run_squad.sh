@@ -65,9 +65,11 @@ python run_squad.py \
   --model_name_or_path albert-base-v1 \
   --do_train \
   --do_eval \
+  --do_eda \
+  --eda_part question \
   --op sr \
   --alpha 0.1 \
-  --num_aug 4 \
+  --num_aug 2 \
   --data_dir data/squad1 \
   --train_file train-v1.1.json \
   --predict_file dev-v1.1.json \
@@ -78,6 +80,6 @@ python run_squad.py \
   --doc_stride 128 \
   --logging_steps 5000 \
   --save_steps 5000 \
-  --output_dir new_albert_sr_4_0.1 \
+  --output_dir con_albert_sr_2_0.1 \
   --per_gpu_train_batch_size 48 \
   --per_gpu_eval_batch_size 8

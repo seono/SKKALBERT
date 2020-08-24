@@ -65,10 +65,11 @@ def synonym_replacement(words, n, context=False):
 	num_replaced = 0
 	for random_word in random_word_list:
 		synonyms = get_synonyms(random_word)
-		
-		if context:
-			synonyms = [word for word in synonyms if len(word) == 1] # Remain only 1 word synonym
 
+		if context:
+			new_synonyms = [word for word in synonyms if len(word) == 1] # Remain only 1 word synonym
+			synonyms = new_synonyms.copy()
+			
 		if len(synonyms) >= 1:
 			synonym = random.choice(list(synonyms))
 			new_words = [synonym if word == random_word else word for word in new_words]
