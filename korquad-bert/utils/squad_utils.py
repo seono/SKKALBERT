@@ -132,13 +132,13 @@ def get_squad_train_examples(data_dir, filename=None, args=None):
 
 
 def augment_squad_part(example, args, start_position_character):
-    if args.eda_all_op:
-        aug_sentences = eda(example.question_text, alpha_sr=args.alpha, alpha_ri=args.alpha, alpha_rs=args.alpha, p_rd=args.alpha, num_aug=args.num_aug)
-    else:
-        aug_sentences = eda_one_op(example.question_text, args, alpha=args.alpha, num_aug=args.num_aug)
-    aug_examples = []
-    for aug_sentence in aug_sentences:
-        if args.eda_part == 'question':
+    if args.eda_part == 'question':
+        if args.eda_all_op:
+            aug_sentences = eda(example.question_text, alpha_sr=args.alpha, alpha_ri=args.alpha, alpha_rs=args.alpha, p_rd=args.alpha, num_aug=args.num_aug)
+        else:
+            aug_sentences = eda_one_op(example.question_text, args, alpha=args.alpha, num_aug=args.num_aug)
+        aug_examples = []
+        for aug_sentence in aug_sentences:
             new_example = SquadExample(
                             qas_id=example.qas_id,
                             question_text=aug_sentence,
@@ -148,17 +148,25 @@ def augment_squad_part(example, args, start_position_character):
                             answers=example.answers,
                             title=example.title,
                             is_impossible=example.is_impossible)
-        elif args.eda_part == 'context':
+            aug_examples.append(new_example)
+
+    elif args.eda_part == 'context':
+        if args.eda_all_op:
+            aug_sentences = eda(example.context_text, alpha_sr=args.alpha, alpha_ri=args.alpha, alpha_rs=args.alpha, p_rd=args.alpha, num_aug=args.num_aug)
+        else:
+            aug_sentences = eda_one_op(example.context_text, args, alpha=args.alpha, num_aug=args.num_aug)
+        aug_examples = []
+        for aug_sentence in aug_sentences:
             new_example = SquadExample(
-                        qas_id=example.qas_id,
-                        question_text=example.question_text,
-                        context_text=aug_sentence,
-                        answer_text=example.answer_text,
-                        start_position_character=start_position_character,
-                        answers=example.answers,
-                        title=example.title,
-                        is_impossible=example.is_impossible)
-        aug_examples.append(new_example)
+                            qas_id=example.qas_id,
+                            question_text=example.question_text,
+                            context_text=aug_sentence,
+                            answer_text=example.answer_text,
+                            start_position_character=start_position_character,
+                            answers=example.answers,
+                            title=example.title,
+                            is_impossible=example.is_impossible)
+            aug_examples.append(new_example)   
     return aug_examples
 
 def get_now_str():

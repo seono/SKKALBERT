@@ -229,21 +229,25 @@ def eda_one_op(sentence, args, alpha=0.1, num_aug=2):
 		try:
 			if args.eda_part == 'context':
 				a_words = synonym_replacement(words, nn, True)
+				augmented_sentences.append(' '.join(a_words))
 				'''
 					Other methods (ri, rs, rd) in context part to be done later
 				'''
 			else:
 				if args.op == 'sr':
 					a_words = synonym_replacement(words, nn)
+					augmented_sentences.append(' '.join(a_words))
 				elif args.op == 'ri':
 					a_words = random_insertion(words, nn)
+					augmented_sentences.append(' '.join(a_words))
 				elif args.op == 'rd':
-					a_words = random_deletion(words, alpha)	
+					a_words = random_deletion(words, alpha)
+					augmented_sentences.append(' '.join(a_words))
 				elif args.op == 'rs':
 					a_words = random_swap(words, nn)
+					augmented_sentences.append(' '.join(a_words))
 		except Exception as e:
 			print(e)
-		augmented_sentences.append(' '.join(a_words))
 	augmented_sentences = [get_only_chars(sentence) for sentence in augmented_sentences]
 	shuffle(augmented_sentences)
 	
