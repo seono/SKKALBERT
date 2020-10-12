@@ -155,7 +155,8 @@ preprocess.py
 
 korquad1/*
 korquad1_0/*
-bert/*
+bert
+korquad_pretrained
 
 
 models/*
