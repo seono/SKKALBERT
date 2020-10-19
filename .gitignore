@@ -158,6 +158,7 @@ korquad1_0/*
 bert/
 korquad_pretrained/
 
+koelectra/output/
 
 models/*
 *.bin

@@ -173,13 +173,14 @@ def read_squad_examples(input_file, is_training, version_2_with_negative, args=N
                         answer_length = len(orig_answer_text)
                         cleaned_answer_text = " ".join(whitespace_tokenize(orig_answer_text))
                         if args.eda_type[:2] == "st":
-                            aug_sentences = sentence_eda(paragraph_text,orig_answer_text,args.eda_type,args.alpha,args.num_aug)                                
+                            aug_sentences = sentence_eda(paragraph_text,orig_answer_text,answer_offset,args.eda_type,args.alpha,args.num_aug)                                
                             for new_context,new_answer_start in aug_sentences:
                                 new_doctokens, new_char_to_word_offset = caldoctoken(new_context)
                                 new_start_position = new_char_to_word_offset[new_answer_start]
                                 new_end_position = new_char_to_word_offset[new_answer_start + answer_length - 1]
                                 actual_text = " ".join(new_doctokens[new_start_position:(new_end_position+1)])
                                 if actual_text.find(cleaned_answer_text) == -1:
+                                    logger.warning("Could not find answer: '%s' vs. '%s'", actual_text, cleaned_answer_text)
                                     continue
                                 example = SquadExample(
                                     qas_id = qas_id,

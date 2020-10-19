@@ -60,9 +60,13 @@ def to_list(tensor):
 
 def train(args, train_dataset, model, tokenizer, result_list=None):
     """ Train the model """
+    seperate_num = int(len(train_dataset)*0.8)
+    train_dataset, valid_dataset = torch.utils.data.random_split(train_dataset,[seperate_num,train_dataset-seperate_num])
     train_sampler = RandomSampler(train_dataset)
     train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
-
+    valid_sampler = SequentialSampler(valid_dataset)
+    valid_dataloader = DataLoader(valid_dataset, sampler=valid_sampler, batch_size=args.train_batch_size)
+	
     if args.max_steps > 0:
         t_total = args.max_steps
         args.num_train_epochs = args.max_steps // (len(train_dataloader) // args.gradient_accumulation_steps) + 1
@@ -132,7 +136,8 @@ def train(args, train_dataset, model, tokenizer, result_list=None):
         epoch_iterator = tqdm(
             train_dataloader, leave=True, position=0
         )
-        train_loss=[]
+        train_loss = []
+        valid_loss = []
         for step, batch in enumerate(epoch_iterator):
             # Skip past any already trained steps if resuming training
             if steps_trained_in_current_epoch > 0:
@@ -182,8 +187,8 @@ def train(args, train_dataset, model, tokenizer, result_list=None):
             epoch_iterator.set_description(
                     "Train(%d Epoch) Step(%d / %d) (loss=%5.5f)" % (epoch, global_step, t_total, loss.item())
                 )
+                
 
-        logger.info("%.4f", np.mean(train_loss))
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)                
         output_eval_file = os.path.join(args.output_dir,"evaluate_result_{}.txt".format(args.eda_type))

@@ -1,0 +1,300 @@
+0 epoch
+
+   HasAns_exact = 59.39377886668763
+   HasAns_f1 = 69.20189243186422
+   HasAns_total = 60407
+   best_exact = 59.39377886668763
+   best_exact_thresh = 0.0
+   best_f1 = 69.20189243186422
+   best_f1_thresh = 0.0
+   exact = 59.39377886668763
+   f1 = 69.20189243186422
+   total = 60407
+
+
+
+1 epoch
+
+   HasAns_exact = 62.98773320972735
+   HasAns_f1 = 72.21182970718456
+   HasAns_total = 60407
+   best_exact = 62.98773320972735
+   best_exact_thresh = 0.0
+   best_f1 = 72.21182970718456
+   best_f1_thresh = 0.0
+   exact = 62.98773320972735
+   f1 = 72.21182970718456
+   total = 60407
+
+
+
+2 epoch
+
+   HasAns_exact = 64.8964523979009
+   HasAns_f1 = 73.65733516080778
+   HasAns_total = 60407
+   best_exact = 64.8964523979009
+   best_exact_thresh = 0.0
+   best_f1 = 73.65733516080778
+   best_f1_thresh = 0.0
+   exact = 64.8964523979009
+   f1 = 73.65733516080778
+   total = 60407
+
+
+
+3 epoch
+
+   HasAns_exact = 66.40124488883738
+   HasAns_f1 = 74.65425444261854
+   HasAns_total = 60407
+   best_exact = 66.40124488883738
+   best_exact_thresh = 0.0
+   best_f1 = 74.65425444261854
+   best_f1_thresh = 0.0
+   exact = 66.40124488883738
+   f1 = 74.65425444261854
+   total = 60407
+
+
+
+4 epoch
+
+   HasAns_exact = 67.33325607959343
+   HasAns_f1 = 75.28164594623718
+   HasAns_total = 60407
+   best_exact = 67.33325607959343
+   best_exact_thresh = 0.0
+   best_f1 = 75.28164594623718
+   best_f1_thresh = 0.0
+   exact = 67.33325607959343
+   f1 = 75.28164594623718
+   total = 60407
+
+
+
+5 epoch
+
+   HasAns_exact = 67.8447862002748
+   HasAns_f1 = 75.60183593423007
+   HasAns_total = 60407
+   best_exact = 67.8447862002748
+   best_exact_thresh = 0.0
+   best_f1 = 75.60183593423007
+   best_f1_thresh = 0.0
+   exact = 67.8447862002748
+   f1 = 75.60183593423007
+   total = 60407
+
+
+
+6 epoch
+
+   HasAns_exact = 68.3314847616998
+   HasAns_f1 = 75.87086442282362
+   HasAns_total = 60407
+   best_exact = 68.3314847616998
+   best_exact_thresh = 0.0
+   best_f1 = 75.87086442282362
+   best_f1_thresh = 0.0
+   exact = 68.3314847616998
+   f1 = 75.87086442282362
+   total = 60407
+
+
+
+7 epoch
+
+   HasAns_exact = 68.77679739103084
+   HasAns_f1 = 76.0896988227424
+   HasAns_total = 60407
+   best_exact = 68.77679739103084
+   best_exact_thresh = 0.0
+   best_f1 = 76.0896988227424
+   best_f1_thresh = 0.0
+   exact = 68.77679739103084
+   f1 = 76.0896988227424
+   total = 60407
+
+
+
+8 epoch
+
+   HasAns_exact = 68.96055092952804
+   HasAns_f1 = 76.2059023754487
+   HasAns_total = 60407
+   best_exact = 68.96055092952804
+   best_exact_thresh = 0.0
+   best_f1 = 76.2059023754487
+   best_f1_thresh = 0.0
+   exact = 68.96055092952804
+   f1 = 76.2059023754487
+   total = 60407
+
+
+
+9 epoch
+
+   HasAns_exact = 69.11947290876886
+   HasAns_f1 = 76.31424732298743
+   HasAns_total = 60407
+   best_exact = 69.11947290876886
+   best_exact_thresh = 0.0
+   best_f1 = 76.31424732298743
+   best_f1_thresh = 0.0
+   exact = 69.11947290876886
+   f1 = 76.31424732298743
+   total = 60407
+
+
+
+10 epoch
+
+   HasAns_exact = 69.35454500306255
+   HasAns_f1 = 76.44432766252199
+   HasAns_total = 60407
+   best_exact = 69.35454500306255
+   best_exact_thresh = 0.0
+   best_f1 = 76.44432766252199
+   best_f1_thresh = 0.0
+   exact = 69.35454500306255
+   f1 = 76.44432766252199
+   total = 60407
+
+
+
+11 epoch
+
+   HasAns_exact = 69.41579618256162
+   HasAns_f1 = 76.49115154255219
+   HasAns_total = 60407
+   best_exact = 69.41579618256162
+   best_exact_thresh = 0.0
+   best_f1 = 76.49115154255219
+   best_f1_thresh = 0.0
+   exact = 69.41579618256162
+   f1 = 76.49115154255219
+   total = 60407
+
+
+
+12 epoch
+
+   HasAns_exact = 69.4604929892231
+   HasAns_f1 = 76.49321772939541
+   HasAns_total = 60407
+   best_exact = 69.4604929892231
+   best_exact_thresh = 0.0
+   best_f1 = 76.49321772939541
+   best_f1_thresh = 0.0
+   exact = 69.4604929892231
+   f1 = 76.49321772939541
+   total = 60407
+
+
+
+13 epoch
+
+   HasAns_exact = 69.4969126094658
+   HasAns_f1 = 76.50449076273003
+   HasAns_total = 60407
+   best_exact = 69.4969126094658
+   best_exact_thresh = 0.0
+   best_f1 = 76.50449076273003
+   best_f1_thresh = 0.0
+   exact = 69.4969126094658
+   f1 = 76.50449076273003
+   total = 60407
+
+
+
+14 epoch
+
+   HasAns_exact = 69.52174416872217
+   HasAns_f1 = 76.50434785746029
+   HasAns_total = 60407
+   best_exact = 69.52174416872217
+   best_exact_thresh = 0.0
+   best_f1 = 76.50434785746029
+   best_f1_thresh = 0.0
+   exact = 69.52174416872217
+   f1 = 76.50434785746029
+   total = 60407
+
+
+
+15 epoch
+
+   HasAns_exact = 69.61279321932889
+   HasAns_f1 = 76.57543822648799
+   HasAns_total = 60407
+   best_exact = 69.61279321932889
+   best_exact_thresh = 0.0
+   best_f1 = 76.57543822648799
+   best_f1_thresh = 0.0
+   exact = 69.61279321932889
+   f1 = 76.57543822648799
+   total = 60407
+
+
+
+16 epoch
+
+   HasAns_exact = 69.63431390401774
+   HasAns_f1 = 76.59828851636036
+   HasAns_total = 60407
+   best_exact = 69.63431390401774
+   best_exact_thresh = 0.0
+   best_f1 = 76.59828851636036
+   best_f1_thresh = 0.0
+   exact = 69.63431390401774
+   f1 = 76.59828851636036
+   total = 60407
+
+
+
+17 epoch
+
+   HasAns_exact = 69.73860645289453
+   HasAns_f1 = 76.66904602930164
+   HasAns_total = 60407
+   best_exact = 69.73860645289453
+   best_exact_thresh = 0.0
+   best_f1 = 76.66904602930164
+   best_f1_thresh = 0.0
+   exact = 69.73860645289453
+   f1 = 76.66904602930164
+   total = 60407
+
+
+
+18 epoch
+
+   HasAns_exact = 69.72536295462446
+   HasAns_f1 = 76.65773603849959
+   HasAns_total = 60407
+   best_exact = 69.72536295462446
+   best_exact_thresh = 0.0
+   best_f1 = 76.65773603849959
+   best_f1_thresh = 0.0
+   exact = 69.72536295462446
+   f1 = 76.65773603849959
+   total = 60407
+
+
+
+19 epoch
+
+   HasAns_exact = 69.73364014104325
+   HasAns_f1 = 76.66213917707887
+   HasAns_total = 60407
+   best_exact = 69.73364014104325
+   best_exact_thresh = 0.0
+   best_f1 = 76.66213917707887
+   best_f1_thresh = 0.0
+   exact = 69.73364014104325
+   f1 = 76.66213917707887
+   total = 60407
+
+
+

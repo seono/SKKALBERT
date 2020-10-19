@@ -282,6 +282,7 @@ def sentence_rs(sentences,n,num_aug):
 def sentence_rd(sentences,except_list, n, num_aug):
     contexts = []
     if len(except_list)==len(sentences):
+        contexts.append(sentences[0])
         return contexts
     while len(contexts)<num_aug:
         i = n
@@ -295,11 +296,11 @@ def sentence_rd(sentences,except_list, n, num_aug):
         contexts.append(' '.join(new_sentences))
     return contexts
 
-def sentence_eda(context, orig_answer_text, eda_type, alpha=0.1, num_aug=2):
+def sentence_eda(context, orig_answer_text,answer_start, eda_type, alpha=0.1, num_aug=2):
     sentences = context.split('다. ')
     new_sentences = [sentence+'다.' for sentence in sentences[:-1]]
     new_sentences.append(sentences[-1])
-    answer_start = context.find(orig_answer_text)
+    answer_start = answer_start
     answer_end = answer_start+len(orig_answer_text)-1
     p = 0
     except_list=set()
@@ -309,6 +310,7 @@ def sentence_eda(context, orig_answer_text, eda_type, alpha=0.1, num_aug=2):
         if answer_start<p:
             except_list.add(i)
             break
+    p = 0
     for i,st in enumerate(sentences):
         p+=len(st)
         p+=1

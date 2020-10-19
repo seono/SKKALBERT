@@ -20,7 +20,7 @@
   "do_lower_case": false,
   "do_train": true,
   "do_eval": false,
-  "num_train_epochs": 80,
+  "num_train_epochs": 20,
   "weight_decay": 0.0,
   "gradient_accumulation_steps": 1,
   "adam_epsilon": 1e-8,
