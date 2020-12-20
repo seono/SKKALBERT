@@ -60,6 +60,10 @@ Evaluating: 100% 1832/1832 [00:28<00:00, 64.52it/s]
 SR(동의어 교체), RD(무작위 삭제), RI(무작위 삽입), RS(무작위 교체)
 
 ### 문장 부분 단어 단위 기법 효과
+<div>
+  <img src="https://user-images.githubusercontent.com/47937302/102715212-2b052b80-4317-11eb-9cda-2eae2c89048b.jpg"></img>
+  <img src="https://user-images.githubusercontent.com/47937302/102715213-2c365880-4317-11eb-88f3-3276c5389f5e.jpg"></img>
+ </div>
 위의 SR, RD, RI, RS 기법별 성능 차이를 비교
 
 ### 문단 부분 문장 단위 기법 효과
