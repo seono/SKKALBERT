@@ -55,7 +55,7 @@ Evaluating: 100% 1832/1832 [00:28<00:00, 64.52it/s]
 ```
 ## 데이터 증강 기법
 
-https://user-images.githubusercontent.com/47937302/102715176-e7aabd00-4316-11eb-8cb5-988ff97208f4.png
+<img src="https://user-images.githubusercontent.com/47937302/102715176-e7aabd00-4316-11eb-8cb5-988ff97208f4.png"></img>
 
 SR(동의어 교체), RD(무작위 삭제), RI(무작위 삽입), RS(무작위 교체)
 
