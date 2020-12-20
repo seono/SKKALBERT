@@ -2,11 +2,12 @@
 
 기계 독해 성능 개선을 위한 데이터 증강 기법 구현
 
-[ALBERT-base](https://github.com/google-research/albert), ALBERT-large(https://github.com/google-research/albert) 모델 사용
+[ALBERT-base](https://github.com/google-research/albert), [ALBERT-large](https://github.com/google-research/albert) 모델 사용
 
-SQuAD 1.1(https://rajpurkar.github.io/SQuAD-explorer/)와 KorQuAD 1.0(https://korquad.github.io/category/1.0_KOR.html) 데이터를 이용하여 실험
+[SQuAD 1.1](https://rajpurkar.github.io/SQuAD-explorer/)와 [KorQuAD 1.0](https://korquad.github.io/category/1.0_KOR.html) 데이터를 이용하여 실험
 
-### Example Code(https://colab.research.google.com/drive/1hTS7fgwPHWL6ijfF7Kgcyxbh02cN1tLw?usp=sharing)
+
+### [Example Code](https://colab.research.google.com/drive/1hTS7fgwPHWL6ijfF7Kgcyxbh02cN1tLw?usp=sharing)
 학습, 데이터 제한 5000, 동의어 교체 편집 기법 사용(--eda_type sr)
 ```shell
 python3 run_qa_small.py \
