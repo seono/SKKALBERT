@@ -58,7 +58,8 @@ Evaluating: 100% 1832/1832 [00:28<00:00, 64.52it/s]
 <img src="https://user-images.githubusercontent.com/47937302/102715176-e7aabd00-4316-11eb-8cb5-988ff97208f4.png" width="80%"></img>
 
 SR(동의어 교체), RD(무작위 삭제), RI(무작위 삽입), RS(무작위 교체)
-
+n_aug : 데이터 증강 단위
+α : 문장 내 단어 또는 문단 내 문장 변화 정도
 ### 문장 부분 단어 단위 기법 효과
 <div>
   <img src="https://user-images.githubusercontent.com/47937302/102715212-2b052b80-4317-11eb-9cda-2eae2c89048b.jpg" width="40%"></img>
@@ -67,13 +68,27 @@ SR(동의어 교체), RD(무작위 삭제), RI(무작위 삽입), RS(무작위 �
 위의 SR, RD, RI, RS 기법별 성능 차이를 비교
 
 ### 문단 부분 문장 단위 기법 효과
+|문장 단위 기법| n_aug | α | EM Gain | F1 Gain|
+|:---:|:---:|:---:|:---:|:---:|
+|Context RS| 0.5 | 0.1 | 0.24 | 0.21 |
+|Context RD| 1 | 0.1 | 0.02 | 0.24 |
 문장 단위는 무작위 삭제(RD)와 무작위 교체(RS)를 수행
 
 
 ### 모델 규모에 따른 성능 향상
+|Model(ALBERT)| Question:단어 단위 | |Context:문장 단위 | |
+||EM Gain | F1 Gain | EM Gain | F1 Gain |
+|:---:|:---:|:---:|:---:|:---:|
+|Base| 0.478 | 0.366 | -0.374 | -0.170 |
+|Large| 0.648 | 0.293 | -0.161 | -0.182 |
 
 ALBERT-base와 ALBERT-large모델 비교
 
 ### 데이터 크기에 따른 문장 단위 기법 성능 향상
+| Data size | EM Gain | F1 Gain|
+|:---:|:---:|:---:|
+|500|0.965|0.690|
+|5000|0.653|0.196|
+|Full data|-0.374|-0.170|
 
 주어진 학습데이터를 제한하여 기법 성능 향상 정도를 비교
