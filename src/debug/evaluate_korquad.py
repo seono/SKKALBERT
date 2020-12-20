@@ -1,16 +1,13 @@
 from __future__ import print_function
-from collections import Counter, OrderedDict
+from collections import Counter
 import string
 import re
 import argparse
 import json
 import sys
-import logging
 
 '''KorQuAD v1.0에 대한 공식 평가 스크립트 '''
 '''본 스크립트는 SQuAD v1.1 평가 스크립트 https://rajpurkar.github.io/SQuAD-explorer/ 를 바탕으로 작성됨.'''
-
-logger = logging.getLogger(__name__)
 
 def normalize_answer(s):    
     def remove_(text):
@@ -73,49 +70,40 @@ def exact_match_score(prediction, ground_truth):
     return (normalize_answer(prediction) == normalize_answer(ground_truth))
 
 
-def metric_max_over_ground_truths(metric_fn, prediction, ground_truth):
-    return metric_fn(prediction, ground_truth)
+def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
+    scores_for_ground_truths = []
+    for ground_truth in ground_truths:
+        score = metric_fn(prediction, ground_truth)
+        scores_for_ground_truths.append(score)
+    return max(scores_for_ground_truths)
 
 
-def evaluate(args, predictions):
+def evaluate(dataset, predictions):
     f1 = exact_match = total = 0
-    expected_version = 'KorQuAD_2.0'
-    predict_file = args.predict_file
-    for a in range(0,5):
-        a='0'+str(a)
-        filename = predict_file+a+'.json'
-        with open(filename, encoding="utf-8") as data_file:
-            datas = json.load(data_file, object_pairs_hook=OrderedDict)
-            read_version = "_".join(datas['version'].split("_")[:-1])
-            if (read_version != expected_version):
-                logger.info('Evaluation expects ' + expected_version +
-                            ', but got dataset with ' + read_version)
-        i=0
-        while (i+1)*args.parse_size<= len(datas["data"]):
-            logger.info("evaluate data {}_{}".format(a,str(i)))
-            dataset = datas["data"][i*args.parse_size:(i+1)*args.parse_size]
-            for paragraph in dataset:
-                for qa in paragraph['qas']:
-                    total += 1
-                    if qa['id'] not in predictions:
-                        message = 'Unanswered question ' + qa['id'] + \
-                                ' will receive score 0.'
-                        print(message, file=sys.stderr)
-                        continue
-                    ground_truth = qa['answer']['text']
-                    prediction = predictions[qa['id']]
-                    exact_match += metric_max_over_ground_truths(
-                        exact_match_score, prediction, ground_truth)
-                    f1 += metric_max_over_ground_truths(
-                        f1_score, prediction, ground_truth)
-            i+=1
+    for article in dataset:
+        for paragraph in article['paragraphs']:
+            for qa in paragraph['qas']:
+                total += 1
+                if qa['id'] not in predictions:
+                    message = 'Unanswered question ' + qa['id'] + \
+                              ' will receive score 0.'
+                    print(message, file=sys.stderr)
+                    continue
+                ground_truths = list(map(lambda x: x['text'], qa['answers']))
+                prediction = predictions[qa['id']]
+                exact_match += metric_max_over_ground_truths(
+                    exact_match_score, prediction, ground_truths)
+                f1 += metric_max_over_ground_truths(
+                    f1_score, prediction, ground_truths)
+
     exact_match = 100.0 * exact_match / total
     f1 = 100.0 * f1 / total
+    print(exact_match, f1)
     return {'exact_match': exact_match, 'f1': f1}
 
 
 if __name__ == '__main__':
-    expected_version = 'KorQuAD_2.0'
+    expected_version = 'KorQuAD_v1.0'
     parser = argparse.ArgumentParser(
         description='Evaluation for KorQuAD ' + expected_version)
     parser.add_argument('dataset_file', help='Dataset file')
@@ -131,4 +119,4 @@ if __name__ == '__main__':
         dataset = dataset_json['data']
     with open(args.prediction_file) as prediction_file:
         predictions = json.load(prediction_file)
-    print(json.dumps(evaluate(args, predictions)))
+    print(json.dumps(evaluate(dataset, predictions)))

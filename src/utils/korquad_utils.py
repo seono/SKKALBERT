@@ -4,36 +4,20 @@ import collections
 import json
 import logging
 import math
-import time
+import random
+import khaiii
+import torch
 import os
-import sys
-from io import open
-from multiprocessing import Pool, cpu_count
-from .wiki_convert import Korquad2_Converter
-if sys.version_info[0] == 2:
-    import cPickle as pickle
-else:
-    import pickle
-from .tokenization import BasicTokenizer, whitespace_tokenize
-from functools import partial
+
 from tqdm import tqdm, trange
-from .mecab_utils import get_morph_text, remove_postag, improve_morph_answer_span
 
-from konlpy.tag import Mecab
-from transformers.data.processors.squad import SquadV2Processor, SquadExample
+from io import open
+from .eda import eda, WordEmbeddingModel_init, synonym_dict_init, sentence_eda
 
+from .tokenization import BasicTokenizer, whitespace_tokenize
 
 logger = logging.getLogger(__name__)
 
-def korquad_convert_examples_to_features_init(convert_tokenizer):
-    global tokenizer
-    tokenizer = convert_tokenizer
-
-def convert_to_korquad_example_init(convert_for_convert, analyzer):
-    global converter
-    global morph_analyzer
-    converter = convert_for_convert
-    morph_analyzer = analyzer
 
 class SquadExample(object):
     """
@@ -45,7 +29,6 @@ class SquadExample(object):
                  qas_id,
                  question_text,
                  doc_tokens,
-                 answers,
                  orig_answer_text=None,
                  start_position=None,
                  end_position=None,
@@ -57,7 +40,6 @@ class SquadExample(object):
         self.start_position = start_position
         self.end_position = end_position
         self.is_impossible = is_impossible
-        self.answers = answers
 
     def __str__(self):
         return self.__repr__()
@@ -75,34 +57,6 @@ class SquadExample(object):
         if self.is_impossible:
             s += ", is_impossible: %r" % (self.is_impossible)
         return s
-
-class korquadExample():
-    def __init__(
-            self,
-            qas_id,
-            question_text,
-            answer_text,
-            title,
-            is_impossible=False,
-
-    ):
-        self.qas_id = qas_id
-        self.question_text = question_text
-        self.answer_text = answer_text
-        self.title = title
-        self.is_impossible = is_impossible
-        self.answers = []
-        self.examples = []
-
-    def add_SquadExample(self, example):
-        if not example.is_impossible:
-            self.orig_answer_text = example.orig_answer_text
-            self.is_impossible = example.is_impossible
-            self.answers = example.answers
-        self.examples.append(example)
-
-    def get_SquadExamples(self):
-        return self.examples
 
 
 class InputFeatures(object):
@@ -134,149 +88,163 @@ class InputFeatures(object):
         self.end_position = end_position
         self.is_impossible = is_impossible
 
-def save_features(args, features, file_num, example_idx):
-    output_features = "feature_temp_data_{}_{}.pkl".format(file_num,str(example_idx))
-    output_feat_file = os.path.join(args.example_dir, output_features)
-    with open(output_feat_file, 'wb') as output:
-        pickle.dump(features, output, pickle.HIGHEST_PROTOCOL)
-        
-    logger.info("extracting end, %s saved", output_features)
+def question_augment(example, args):
 
-def convert_to_korquad_example(entry, is_training, version_2_with_negative=False):
-    """Read a SQuAD json file into a list of SquadExample."""
+    aug_sentences = eda(example.question_text,
+                        eda_type = args.eda_type,
+                        alpha = args.alpha,
+                        num_aug = args.num_aug,
+                        min_score = args.min_score)
+    augmented_examples = []
+    #last element of augmented_senteces is orignal sentence so skip
+    for new_question_text in aug_sentences[:-1]:
+        new_example = SquadExample(
+                        qas_id=example.qas_id,
+                        question_text=new_question_text,
+                        doc_tokens=example.doc_tokens,
+                        orig_answer_text=example.orig_answer_text,
+                        start_position=example.start_position,
+                        end_position=example.end_position,
+                        is_impossible=example.is_impossible)
+        augmented_examples.append(new_example)
+    return augmented_examples
+    
+def caldoctoken(context):
+    
     def is_whitespace(c):
         if c == " " or c == "\t" or c == "\r" or c == "\n" or ord(c) == 0x202F:
             return True
         return False
 
-    title = entry["title"]
-    html = entry["context"]
-    qas = entry["qas"]
-
-    ## 답변길이가 긴 것들은 BERT계열의 모델의 성능만 낮추는 결과를 초래함. 따라서 제한한다.
-    modified_qas = converter.get_qas_by_len(qas)
-    if len(modified_qas)==0:
-        return []
-
-    modified_paragraphs = converter.convert_to_squad_format(html, modified_qas)
-    temp_examples = {}
-    for modified_paragraph in modified_paragraphs:
-        paragraph_text = modified_paragraph["context"]
-        morph_context, morph_eojeol_context_tokens, morph_context_space, er = get_morph_text(paragraph_text, morph_analyzer, True)
-        morph_question = ""
-        morph_start_position = 0
-        morph_end_position = 0
-        doc_tokens = []
-        char_to_word_offset = []
-        prev_is_whitespace = True
-        #korquad2.0 html tag까지 paragraph_text에 포함
-        #앞에 부분이 공백문자이면 단어의 시작, 아니면 앞단어에 문자그대로 추가
-        for c in paragraph_text:
-            if is_whitespace(c):
-                prev_is_whitespace = True
+    doc_tokens = []
+    char_to_word_offset = []
+    prev_is_whitespace = True
+    for c in context:
+        if is_whitespace(c):
+            prev_is_whitespace = True
+        else:
+            if prev_is_whitespace:
+                doc_tokens.append(c)
             else:
-                if prev_is_whitespace:
-                    doc_tokens.append(c)
-                else:
-                    doc_tokens[-1] += c
-                prev_is_whitespace = False
-            char_to_word_offset.append(len(doc_tokens) - 1)
+                doc_tokens[-1] += c
+            prev_is_whitespace = False
+        char_to_word_offset.append(len(doc_tokens) - 1)
+    
+    return doc_tokens, char_to_word_offset
 
-        morph_context_tokens = []
-        orig_to_tok_index = []
-        tok_to_orig_index = []
 
-        for (i, token) in enumerate(doc_tokens):
-            orig_to_tok_index.append(len(morph_context_tokens))
-            sub_tokens = morph_eojeol_context_tokens[i].split(" + ")
-            for sub_token in sub_tokens:
-                tok_to_orig_index.append(i)
-                morph_context_tokens.append(sub_token)
-        
-        clean_morph_context_tokens = remove_postag(morph_context_tokens)
-
-        for qa in modified_paragraph["qas"]:
-            qas_id = qa["id"]
-            question_text = qa["question"]
-            start_position = None
-            end_position = None
-            orig_answer_text = None
-            is_impossible = False
-            answers = []
-            if "is_impossible" in qa:
-                is_impossible = qa["is_impossible"]
-            else:
+def read_squad_examples(input_file, is_training, version_2_with_negative, args=None):
+    if is_training:
+        WordEmbeddingModel_init(model_name=args.eda_model_name)
+        synonym_dict_init(dict_file_name=args.dict_file_name)
+    """Read a SQuAD json file into a list of SquadExample."""
+    with open(input_file, "r", encoding='utf-8') as reader:
+        input_data = json.load(reader)["data"]
+    examples = []
+    aug_examples = []
+    for entry in tqdm(input_data, total=len(input_data), position=0, leave=True, desc="read squad examples"):
+        for paragraph in entry["paragraphs"]:
+            paragraph_text = paragraph["context"]
+            doc_tokens, char_to_word_offset = caldoctoken(paragraph_text)
+            for qa in paragraph["qas"]:
+                qas_id = qa["id"]
+                question_text = qa["question"]
+                start_position = None
+                end_position = None
+                orig_answer_text = None
                 is_impossible = False
-            if is_training is True:
-                if not is_impossible:
-                    answer = qa["answers"][0]
-                    
-                    orig_answer_text = answer["text"]
-                    answer_offset = answer["answer_start"]
-                    answer_length = len(orig_answer_text)
-                    start_position = char_to_word_offset[answer_offset]
-                    end_position = char_to_word_offset[answer_offset + answer_length - 1]
-                    
-                    morph_start_position = orig_to_tok_index[start_position]
-
-                    if end_position < len(doc_tokens) - 1:
-                        morph_end_position = orig_to_tok_index[end_position + 1] - 1
+                if is_training:
+                    if version_2_with_negative:
+                        is_impossible = qa["is_impossible"]
+                    if (len(qa["answers"]) != 1) and (not is_impossible):
+                        raise ValueError(
+                            "For training, each question should have exactly 1 answer.")
+                    if not is_impossible:
+                        answer = qa["answers"][0]
+                        orig_answer_text = answer["text"]
+                        answer_offset = answer["answer_start"]
+                        answer_length = len(orig_answer_text)
+                        cleaned_answer_text = " ".join(whitespace_tokenize(orig_answer_text))
+                        if args.eda_type[:2] == "st":
+                            aug_sentences = sentence_eda(paragraph_text,orig_answer_text,args.eda_type,args.alpha,args.num_aug)                                
+                            for new_context,new_answer_start in aug_sentences:
+                                new_doctokens, new_char_to_word_offset = caldoctoken(new_context)
+                                new_start_position = new_char_to_word_offset[new_answer_start]
+                                new_end_position = new_char_to_word_offset[new_answer_start + answer_length - 1]
+                                actual_text = " ".join(new_doctokens[new_start_position:(new_end_position+1)])
+                                if actual_text.find(cleaned_answer_text) == -1:
+                                    logger.warning("can't find %s in %s cus augmentation" % (actual_text, cleaned_answer_text))
+                                    continue
+                                example = SquadExample(
+                                    qas_id = qas_id,
+                                    question_text=question_text,
+                                    doc_tokens=new_doctokens,
+                                    orig_answer_text=orig_answer_text,
+                                    start_position=new_start_position,
+                                    end_position=new_end_position,
+                                    is_impossible=is_impossible
+                                )
+                                aug_examples.append(example)
+                        start_position = char_to_word_offset[answer_offset]
+                        end_position = char_to_word_offset[answer_offset + answer_length - 1]
+                        # Only add answers where the text can be exactly recovered from the
+                        # document. If this CAN'T happen it's likely due to weird Unicode
+                        # stuff so we will just skip the example.
+                        #
+                        # Note that this means for training mode, every example is NOT
+                        # guaranteed to be preserved.
+                        actual_text = " ".join(doc_tokens[start_position:(end_position + 1)])
+                        if actual_text.find(cleaned_answer_text) == -1:
+                            logger.warning("Could not find answer: '%s' vs. '%s'",
+                                           actual_text, cleaned_answer_text)
+                            continue
                     else:
-                        morph_end_position = len(morph_context_tokens) - 1
+                        start_position = -1
+                        end_position = -1
+                        orig_answer_text = ""
 
-                    morph_start_position, morph_end_position = improve_morph_answer_span(clean_morph_context_tokens, morph_context_space, morph_start_position,
-                                                                                            morph_end_position, orig_answer_text)
-
-                    morph_question, _, _, er = get_morph_text(question_text, morph_analyzer)
-                    morph_question = " ".join(remove_postag(morph_question.split(" ")))
-
-
-                    actual_text = " ".join(
-                        doc_tokens[start_position:(end_position + 1)])
-                    cleaned_answer_text = " ".join(
-                        whitespace_tokenize(orig_answer_text))
-                    actual_text = " ".join(actual_text.split())
-                    cleaned_answer_text = " ".join(cleaned_answer_text.split())
-                    if actual_text.find(cleaned_answer_text) == -1:
-                        logger.warning("Could not find answer: '%s' vs. '%s'",
-                                        actual_text, cleaned_answer_text)
-                        continue
-                else:
-                    answers=qa["answers"]
-                    start_position = -1
-                    end_position = -1
-                    orig_answer_text = ""
-
-            if qas_id not in temp_examples:
-                temp_examples[qas_id] = korquadExample(
+                example = SquadExample(
                     qas_id=qas_id,
-                    question_text=morph_question,
-                    answer_text=orig_answer_text,
-                    title=title,
-                    is_impossible=is_impossible,
-                )
+                    question_text=question_text,
+                    doc_tokens=doc_tokens,
+                    orig_answer_text=orig_answer_text,
+                    start_position=start_position,
+                    end_position=end_position,
+                    is_impossible=is_impossible)
+                examples.append(example)
+                if is_training and args.eda_type != "no_eda" and args.eda_type[:2]!="st":
+                    augmented_examples = question_augment(example, args)
+                    for augmented_example in augmented_examples:
+                        aug_examples.append(augmented_example)
+    if args.train_data_limit>0:
+        if args.same_random_index is True:
+            random_index_file = "random_index_{}".format(args.train_data_limit)
+            if os.path.exists(random_index_file):
+                random_index = torch.load(random_index_file)
+            else:
+                index_list = [i for i in range(len(examples))]
+                random_index = random.sample(index_list,args.train_data_limit)
+                torch.save(random_index,random_index_file)
+        else:
+            index_list = [i for i in range(len(examples))]
+            random_index = random.sample(index_list,args.train_data_limit)
+        if args.eda_type=="no_eda":
+            return [examples[i] for i in random_index]
+        else:
+            return [examples[i] for i in random_index] + [aug_examples[i] for i in random_index]
+    else:
+        return examples
 
-            example = SquadExample(
-                qas_id=qas_id,
-                question_text=morph_question,
-                doc_tokens=clean_morph_context_tokens,
-                answers=answers,
-                orig_answer_text=orig_answer_text,
-                start_position=morph_start_position,
-                end_position=morph_end_position,
-                is_impossible=is_impossible)
-
-            temp_examples[qas_id].add_SquadExample(example)
-    return [example for qas_id, example in temp_examples.items()]
 
 
-def convert_examples_to_features(examples, max_seq_length, doc_stride, max_query_length, is_training):
+def convert_examples_to_features(examples, tokenizer, max_seq_length,
+                                 doc_stride, max_query_length, is_training):
     """Loads a data file into a list of `InputBatch`s."""
-    """if converting takes long time, each hour data will saved"""
+
+    unique_id = 1000000000
 
     features = []
-    
-    for (example_index, example) in enumerate(examples.get_SquadExamples()):
+    for (example_index, example) in enumerate(tqdm(examples, total=len(examples), position=0, leave=True, desc="convert_examples_to_features")):
         query_tokens = tokenizer.tokenize(example.question_text)
 
         if len(query_tokens) > max_query_length:
@@ -338,6 +306,7 @@ def convert_examples_to_features(examples, max_seq_length, doc_stride, max_query
                 segment_ids.append(0)
             tokens.append("[SEP]")
             segment_ids.append(0)
+
             for i in range(doc_span.length):
                 split_token_index = doc_span.start + i
                 token_to_orig_map[len(tokens)] = tok_to_orig_index[split_token_index]
@@ -390,7 +359,7 @@ def convert_examples_to_features(examples, max_seq_length, doc_stride, max_query
 
             features.append(
                 InputFeatures(
-                    unique_id=0,
+                    unique_id=unique_id,
                     example_index=example_index,
                     doc_span_index=doc_span_index,
                     tokens=tokens,
@@ -402,62 +371,9 @@ def convert_examples_to_features(examples, max_seq_length, doc_stride, max_query
                     start_position=start_position,
                     end_position=end_position,
                     is_impossible=example.is_impossible))
+            unique_id += 1
 
     return features
-
-
-def korquad_convert_ex_to_ft(examples, max_seq_length, doc_stride, max_query_length, is_training, tokenizer, threads=1):
-
-    features = []
-
-    threads = max(threads, cpu_count())
-    logger.info("workers %d", threads)
-
-    with Pool(threads, initializer=korquad_convert_examples_to_features_init, initargs=(tokenizer,)) as p:
-        annotate_ = partial(
-            convert_examples_to_features,
-            max_seq_length = max_seq_length,
-            doc_stride = doc_stride,
-            max_query_length = max_query_length,
-            is_training = is_training,
-        )
-        features = list(
-            tqdm(
-                p.imap(annotate_, examples, chunksize=32),
-                total=len(examples),
-                desc="convert squad examples to features",
-            )
-        )
-    new_features=[]
-    unique_id = 1000000000
-    example_index = 0
-    for example_features in tqdm(features, total=len(features), desc="add example index and unique id"):
-        if not example_features:
-            continue
-        for example_feature in example_features:
-            example_feature.example_index = example_index
-            example_feature.unique_id = unique_id
-            new_features.append(example_feature)
-            unique_id += 1
-        example_index += 1
-    features = new_features
-    del new_features
-
-    if not is_torch_available():
-        raise RuntimeError("PyTorch must be installed to return a PyTorch dataset.")
-
-    if evaluate:
-        return examples, features
-        
-    all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
-    all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
-    all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
-    all_start_positions = torch.tensor([f.start_position for f in features], dtype=torch.long)
-    all_end_positions = torch.tensor([f.end_position for f in features], dtype=torch.long)
-    dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_start_positions, all_end_positions)
-
-    return dataset
-
 
 def _improve_answer_span(doc_tokens, input_start, input_end, tokenizer,
                          orig_answer_text):
@@ -492,8 +408,6 @@ def _improve_answer_span(doc_tokens, input_start, input_end, tokenizer,
             text_span = " ".join(doc_tokens[new_start:(new_end + 1)])
             if text_span == tok_answer_text:
                 return (new_start, new_end)
-            elif len(text_span)<len(tok_answer_text):
-                break
 
     return (input_start, input_end)
 
@@ -860,46 +774,3 @@ def _compute_softmax(scores):
     for score in exp_scores:
         probs.append(score / total_sum)
     return probs
-
-
-
-class KorquadV2Processor(SquadV2Processor):
-    def __init__(self, threads=1, max_paragraph_length=428, max_answer_text_length=428):
-        self.converter = Korquad2_Converter(
-            max_paragraph_length=max_paragraph_length,
-            max_answer_text_length=max_answer_text_length)
-        super().__init__()
-        self.threads = threads
-        self.analyzer = Mecab()
-
-    train_file = "train-v2.0.json"
-    dev_file = "dev-v2.0.json"
-
-    def _create_examples(self, input_data, set_type):
-        is_training = set_type == "train"
-
-        threads = max(self.threads, cpu_count())
-
-
-        with Pool(threads, initializer=convert_to_korquad_example_init, initargs=(self.converter,self.analyzer,)) as p:
-            annotate_ = partial(
-                convert_to_korquad_example,
-                is_training=is_training,
-                version_2_with_negative=True,
-            )
-            examples = list(
-                tqdm(
-                    p.imap(annotate_, input_data, chunksize=32),
-                    total=len(input_data),
-                    desc="convert file into korquad format",
-                )
-            )
-        new_examples = []
-        for example_list in examples:
-            if not example_list or not type(example_list)==list or len(example_list)<1:
-                continue
-            new_examples.extend(example_list)
-        examples = new_examples
-        del new_examples
-
-        return examples

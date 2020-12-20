@@ -166,7 +166,7 @@ def load_and_cache_examples(args, tokenizer):
         examples = read_squad_examples(input_file="data/korquad/sample.json",
                                         eda_type=args.eda_type,
                                         is_training=True,
-                                        version_2_with_negative=True,
+                                        version_2_with_negative=False,
                                         args=args)
         features = convert_examples_to_features(examples=examples,
                                                 tokenizer=tokenizer,
@@ -305,7 +305,7 @@ def main():
     # Prepare model
     config = Config.from_json_file(args.config_file)
     model = QuestionAnswering(config)
-    model.bert.load_state_dict(torch.load(args.checkpoint))
+    model.load_state_dict(torch.load(args.checkpoint))
     num_params = count_parameters(model)
     logger.info("Total Parameter: %d" % num_params)
     model.to(device)
