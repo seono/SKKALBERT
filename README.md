@@ -77,6 +77,34 @@ n_aug : 데이터 증강 단위
 
 
 ### 모델 규모에 따른 성능 향상
+<table>
+  <th>
+  <td>Model(ALBERT)</td>
+  <td colspan="2">Question:단어 단위</td>
+  <td colspan="2">Context:문장 단위</td>
+  </th>
+  <tr>
+  <td></td>
+  <td>EM Gain</td>
+  <td>F1 Gain</td>
+  <td>EM Gain</td>
+  <td>F1 Gain</td>
+  </tr>
+  <tr>
+  <td>Base</td>
+  <td>0.478</td>
+  <td>0.366</td>
+  <td>-0.374</td>
+  <td>-0.170</td>
+  </tr>
+  <tr>
+  <td>Large</td>
+  <td>0.648</td>
+  <td>0.293</td>
+  <td>-0.161</td>
+  <td>-0.182</td>
+  </tr>
+</table>
 |Model(ALBERT)| Question:단어 단위||Context:문장 단위||
 |:---:|:---:|:---:|:---:|:---:|
 ||EM Gain | F1 Gain | EM Gain | F1 Gain |
