@@ -55,14 +55,14 @@ Evaluating: 100% 1832/1832 [00:28<00:00, 64.52it/s]
 ```
 ## 데이터 증강 기법
 
-<img src="https://user-images.githubusercontent.com/47937302/102715176-e7aabd00-4316-11eb-8cb5-988ff97208f4.png"></img>
+<img src="https://user-images.githubusercontent.com/47937302/102715176-e7aabd00-4316-11eb-8cb5-988ff97208f4.png" width="80%"></img>
 
 SR(동의어 교체), RD(무작위 삭제), RI(무작위 삽입), RS(무작위 교체)
 
 ### 문장 부분 단어 단위 기법 효과
 <div>
-  <img src="https://user-images.githubusercontent.com/47937302/102715212-2b052b80-4317-11eb-9cda-2eae2c89048b.jpg"></img>
-  <img src="https://user-images.githubusercontent.com/47937302/102715213-2c365880-4317-11eb-88f3-3276c5389f5e.jpg"></img>
+  <img src="https://user-images.githubusercontent.com/47937302/102715212-2b052b80-4317-11eb-9cda-2eae2c89048b.jpg" width="40%"></img>
+  <img src="https://user-images.githubusercontent.com/47937302/102715213-2c365880-4317-11eb-88f3-3276c5389f5e.jpg" width="40%"></img>
  </div>
 위의 SR, RD, RI, RS 기법별 성능 차이를 비교
 
